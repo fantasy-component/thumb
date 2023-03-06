@@ -1,12 +1,4 @@
-import {
-  createThumb,
-  Direction,
-  Position,
-  PositionChangeCallback,
-  PositionLimits,
-  Thumb,
-  ThumbOptions
-} from './Thumb'
+import { createThumb, Position, PositionChangeCallback, Thumb, ThumbOptions } from './Thumb'
 
 export const BUTTONS = {
   LEFT: 0,
@@ -29,6 +21,7 @@ export interface DraggingEnvironment {
 
 export type DraggingEnvironmentCreator = (
   finger: Position,
+  element: HTMLElement,
   event: TouchEvent | MouseEvent
 ) => DraggingEnvironment | null | undefined
 
@@ -217,7 +210,7 @@ export class ThumbDOM {
 
     const finger = this.trackFinger(event)!
 
-    const environment = this.options.createDraggingEnvironment?.(finger, event)
+    const environment = this.options.createDraggingEnvironment?.(finger, this.thumbElement!, event)
     if (environment) {
       if (environment.disabled) {
         return
@@ -298,7 +291,7 @@ export class ThumbDOM {
 
     const finger = this.trackFinger(event)!
 
-    const environment = options.createDraggingEnvironment?.(finger, event)
+    const environment = this.options.createDraggingEnvironment?.(finger, this.thumbElement!, event)
     if (environment) {
       if (environment.disabled) {
         return

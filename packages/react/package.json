@@ -23,6 +23,19 @@
   },
   "sideEffects": false,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsup",
+    "play": "cd ./playground & vite"
+  },
+  "dependencies": {
+    "@thumb-fantasy/base": "workspace:*",
+    "clsx": "^1.2.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.28",
+    "react": "^18.2.0"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
   }
 }
