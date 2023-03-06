@@ -7,19 +7,15 @@ import {
   Thumb
 } from './Thumb'
 
-function ownerDocument(node: Node | null | undefined): Document {
-  return node?.ownerDocument || document
-}
-
 export const BUTTONS = {
   LEFT: 0,
   MIDDLE: 1,
   RIGHT: 2
 } as const
 
-type DragStartCallback = (event: TouchEvent | MouseEvent) => void
-type DraggingCallback = (event: TouchEvent | MouseEvent) => void
-type DragEndCallback = (event: TouchEvent | MouseEvent) => void
+function ownerDocument(node: Node | null | undefined): Document {
+  return node?.ownerDocument || document
+}
 
 export interface ThumbDOMOptions {
   disabled?: boolean
@@ -27,12 +23,10 @@ export interface ThumbDOMOptions {
   min?: number | PositionLimits
   max?: number | PositionLimits
   buttons?: number[]
-  // happens at drag-start
-  getDraggingOffset?: (position: Position, event: TouchEvent | MouseEvent) => Position
   onChange?: PositionChangeCallback
-  onDragStart?: DragStartCallback
-  onDragging?: DraggingCallback
-  onDragEnd?: DragEndCallback
+  onDragStart?: (event: TouchEvent | MouseEvent, finger: Position) => void
+  onDragging?: (event: TouchEvent | MouseEvent, finger: Position) => void
+  onDragEnd?: (event: TouchEvent | MouseEvent, finger: Position) => void
 }
 
 const defaultOptions = {
@@ -46,6 +40,7 @@ export class ThumbDOM {
   private thumbElement: HTMLElement | null = null
   private touchId: number | null = null
   private dragging: boolean = false
+  private offset: Position | null = null
 
   private options!: Required<Pick<ThumbDOMOptions, keyof typeof defaultOptions>> & ThumbDOMOptions
 
@@ -87,8 +82,30 @@ export class ThumbDOM {
     }
   }
 
+  setOffset(offset?: Position | null | undefined) {
+    this.offset = offset ? { ...offset } : null
+  }
+
   getPosition() {
     return this.thumb.getPosition()
+  }
+
+  private offsetPosition({ x, y }: Position) {
+    const { offset } = this
+
+    if (offset) {
+      if (x && offset.x) {
+        x -= offset.x
+      }
+      if (y && offset.y) {
+        y -= offset.y
+      }
+    }
+
+    return {
+      x,
+      y
+    }
   }
 
   getDragDistance() {
@@ -138,18 +155,15 @@ export class ThumbDOM {
       this.touchId = touch.identifier
     }
 
-    const { options } = this
+    const finger = this.trackFinger(event)!
 
-    options.onDragStart?.(event)
+    this.options.onDragStart?.(event, finger)
 
-    const finger = this.trackFinger(event)
-    if (finger) {
-      const offset = options.getDraggingOffset?.(finger, event)
-      const fingerValue = finger && this.thumb.move(finger, offset)
+    const actualPosition = this.offsetPosition(finger)
+    const fingerValue = this.thumb.move(actualPosition)
 
-      if (fingerValue) {
-        this.handleChange(fingerValue)
-      }
+    if (fingerValue) {
+      this.handleChange(fingerValue)
     }
 
     const doc = ownerDocument(this.thumbElement)
@@ -163,13 +177,14 @@ export class ThumbDOM {
       return
     }
 
-    const fingerValue = this.thumb.move(finger)
+    this.options.onDragging?.(event, finger)
+
+    const actualPosition = this.offsetPosition(finger)
+    const fingerValue = this.thumb.move(actualPosition)
 
     if (!this.dragging) {
       this.dragging = true
     }
-
-    this.options.onDragging?.(event)
 
     if (fingerValue) {
       this.handleChange(fingerValue)
@@ -182,19 +197,19 @@ export class ThumbDOM {
       return
     }
 
-    const fingerValue = this.thumb.move(finger)
+    this.options.onDragEnd?.(event, finger)
+
+    const actualPosition = this.offsetPosition(finger)
+    const fingerValue = this.thumb.move(actualPosition)
 
     this.dragging = false
     this.touchId = null
-
-    this.options.onDragEnd?.(event)
 
     if (fingerValue) {
       this.handleChange(fingerValue)
     }
 
     this.stopDragListening()
-
     this.thumb.terminateMove()
   }
 
@@ -208,23 +223,22 @@ export class ThumbDOM {
     }
 
     const { options } = this
-    if (!this.options.buttons.includes(event.button)) {
+    if (!options.buttons.includes(event.button)) {
       return
     }
-
-    options.onDragStart?.(event)
 
     // Avoid text selection
     event.preventDefault()
 
-    const finger = this.trackFinger(event)
-    if (finger) {
-      const offset = options.getDraggingOffset?.(finger, event)
-      const fingerValue = this.thumb.move(finger, offset)
+    const finger = this.trackFinger(event)!
 
-      if (fingerValue) {
-        this.handleChange(fingerValue)
-      }
+    options.onDragStart?.(event, finger)
+
+    const actualPosition = this.offsetPosition(finger)
+    const fingerValue = this.thumb.move(actualPosition)
+
+    if (fingerValue) {
+      this.handleChange(fingerValue)
     }
 
     const doc = ownerDocument(this.thumbElement)

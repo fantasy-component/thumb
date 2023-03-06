@@ -10,7 +10,7 @@ export interface PositionLimits {
   y?: number
 }
 
-const EMPTY_LIMITS = {} as any
+const defaultPositionLimits = {} as const as any
 
 function Math_min(...values: any[]) {
   return Math.min(...values.filter((v) => typeof v === 'number'))
@@ -39,12 +39,11 @@ export type ThumbOptionsSetter = (privateOptions: PrivateThumbOptions) => Privat
 
 export class Thumb {
   private position: Position
-  private offset: Position | null = null
   private departurePosition: Position | null = null
   private positionLimits: {
     min: PositionLimits | undefined
     max: PositionLimits | undefined
-  } = EMPTY_LIMITS
+  } = defaultPositionLimits
 
   private options!: PrivateThumbOptions
 
@@ -91,7 +90,7 @@ export class Thumb {
         max
       } as any
     } else {
-      this.positionLimits = EMPTY_LIMITS
+      this.positionLimits = defaultPositionLimits
     }
   }
 
@@ -113,46 +112,26 @@ export class Thumb {
         y: position.y + distance.y
       }
 
+      const newPosition = this.getPosition()
+
       if (!quiet) {
-        this.options.onChange?.(this.position)
+        this.options.onChange?.(newPosition)
       }
 
-      return this.position
+      return newPosition
     }
   }
 
-  move(position: Position, offset?: Position) {
+  move(position: Position) {
     if (!this.departurePosition) {
       this.departurePosition = this.getPosition()
     }
 
-    if (offset) {
-      this.offset = offset
-    }
-
-    const actualPosition = this.getActualPosition(position, this.offset)
-    return this.setPosition(actualPosition)
+    return this.setPosition(position)
   }
 
   terminateMove() {
     this.departurePosition = null
-    this.offset = null
-  }
-
-  getActualPosition({ x, y }: Position, offset?: Position | null) {
-    if (offset) {
-      if (x && offset.x) {
-        x -= offset.x
-      }
-      if (y && offset.y) {
-        y -= offset.y
-      }
-    }
-
-    return {
-      x,
-      y
-    }
   }
 
   getMoveDistance() {
@@ -170,25 +149,25 @@ export class Thumb {
   calcDistance({ x, y }: Position) {
     const { options, position, positionLimits } = this
     const { direction } = options
-
-    if (positionLimits !== EMPTY_LIMITS) {
-      const { min, max } = positionLimits
-
-      if (x) {
-        x = Math_max(min && (min.x as any), Math_min(max && (max.x as any), x))
-      }
-      if (y) {
-        y = Math_max(min && (min.y as any), Math_min(max && (max.y as any), y))
-      }
-    }
+    const { min, max } = positionLimits
 
     let dx = 0
     let dy = 0
-    if (direction !== 'vertical' && x) {
-      dx = x - position.x
+
+    if (x !== undefined) {
+      x = Math_max(min && min.x, Math_min(max && max.x, x))
+
+      if (direction !== 'vertical') {
+        dx = x - position.x
+      }
     }
-    if (direction !== 'horizontal' && y) {
-      dy = y - position.y
+
+    if (y !== undefined) {
+      y = Math_max(min && min.y, Math_min(max && max.y, y))
+
+      if (direction !== 'horizontal') {
+        dy = y - position.y
+      }
     }
 
     if (dx || dy) {
