@@ -4,7 +4,8 @@ import {
   Position,
   PositionChangeCallback,
   PositionLimits,
-  Thumb
+  Thumb,
+  ThumbOptions
 } from './Thumb'
 
 export const BUTTONS = {
@@ -13,27 +14,38 @@ export const BUTTONS = {
   RIGHT: 2
 } as const
 
+function isAllowedButtonType(event: MouseEvent, buttons: number[]) {
+  return buttons.includes(event.button)
+}
+
 function ownerDocument(node: Node | null | undefined): Document {
   return node?.ownerDocument || document
 }
 
-export type OffsetGetter = (
+export interface DraggingEnvironment {
+  disabled?: boolean
+  offset?: Position
+}
+
+export type DraggingEnvironmentCreator = (
   finger: Position,
-  element: HTMLElement,
   event: TouchEvent | MouseEvent
-) => Position | null | undefined
+) => DraggingEnvironment | null | undefined
 
 export type DraggingCallback = (finger: Position, event: TouchEvent | MouseEvent) => void
 
-export interface ThumbDOMOptions {
+export interface ThumbDOMOptions extends Omit<ThumbOptions, 'onChange'> {
   disabled?: boolean
-  direction?: Direction
-  min?: number | PositionLimits
-  max?: number | PositionLimits
+  /**
+   * Allowed button types
+   * https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button
+   */
   buttons?: number[]
-  // only run on drag-start
-  getOffset?: OffsetGetter
-  onChange?: PositionChangeCallback
+  /**
+   * Create an environment for dragging startup, only run on drag-start
+   */
+  createDraggingEnvironment?: DraggingEnvironmentCreator
+  onPositionChange?: PositionChangeCallback
   onDragStart?: DraggingCallback
   onDragging?: DraggingCallback
   onDragEnd?: DraggingCallback
@@ -47,6 +59,7 @@ const defaultOptions = {
 
 export class ThumbDOM {
   private thumb: Thumb
+
   private thumbElement: HTMLElement | null | undefined = null
   private touchId: number | null = null
   private offset: Position | null | undefined = null
@@ -95,6 +108,10 @@ export class ThumbDOM {
     }
   }
 
+  getPosition() {
+    return this.thumb.getPosition()
+  }
+
   setPosition(position: Position, quiet?: boolean) {
     const value = this.thumb.setPosition(position, quiet)
     if (value && !quiet) {
@@ -104,30 +121,8 @@ export class ThumbDOM {
     return value
   }
 
-  getPosition() {
-    return this.thumb.getPosition()
-  }
-
   refreshPosition() {
     this.thumb.refreshPosition()
-  }
-
-  private offsetPosition({ x, y }: Position) {
-    const { offset } = this
-
-    if (offset) {
-      if (x !== undefined && offset.x !== undefined) {
-        x -= offset.x
-      }
-      if (y !== undefined && offset.y !== undefined) {
-        y -= offset.y
-      }
-    }
-
-    return {
-      x,
-      y
-    }
   }
 
   getDragDistance() {
@@ -164,7 +159,50 @@ export class ThumbDOM {
   }
 
   private handleChange(position: Position) {
-    this.options.onChange?.(position)
+    this.options.onPositionChange?.(position)
+  }
+
+  private trackFinger(event: TouchEvent | MouseEvent) {
+    const { touchId } = this
+    // TouchEvent
+    if (touchId !== null && (event as TouchEvent).changedTouches) {
+      const touchEvent = event as TouchEvent
+      for (let i = 0; i < touchEvent.changedTouches.length; i += 1) {
+        const touch = touchEvent.changedTouches[i]
+        if (touch.identifier === touchId) {
+          return {
+            x: touch.clientX,
+            y: touch.clientY
+          }
+        }
+      }
+
+      return null
+    }
+
+    // MouseEvent
+    return {
+      x: (event as MouseEvent).clientX,
+      y: (event as MouseEvent).clientY
+    }
+  }
+
+  private offsetPosition({ x, y }: Position) {
+    const { offset } = this
+
+    if (offset) {
+      if (x !== undefined && offset.x !== undefined) {
+        x -= offset.x
+      }
+      if (y !== undefined && offset.y !== undefined) {
+        y -= offset.y
+      }
+    }
+
+    return {
+      x,
+      y
+    }
   }
 
   private handleTouchStart(event: TouchEvent) {
@@ -177,12 +215,20 @@ export class ThumbDOM {
       this.touchId = touch.identifier
     }
 
-    const { options } = this
     const finger = this.trackFinger(event)!
 
-    options.onDragStart?.(finger, event)
+    const environment = this.options.createDraggingEnvironment?.(finger, event)
+    if (environment) {
+      if (environment.disabled) {
+        return
+      }
 
-    this.offset = options.getOffset?.(finger, this.thumbElement!, event)
+      if (environment.offset) {
+        this.offset = environment.offset
+      }
+    }
+
+    this.options.onDragStart?.(finger, event)
 
     const actualPosition = this.offsetPosition(finger)
     const newPosition = this.thumb.move(actualPosition)
@@ -243,7 +289,7 @@ export class ThumbDOM {
     }
 
     const { options } = this
-    if (!options.buttons.includes(event.button)) {
+    if (!isAllowedButtonType(event, options.buttons)) {
       return
     }
 
@@ -252,9 +298,18 @@ export class ThumbDOM {
 
     const finger = this.trackFinger(event)!
 
-    options.onDragStart?.(finger, event)
+    const environment = options.createDraggingEnvironment?.(finger, event)
+    if (environment) {
+      if (environment.disabled) {
+        return
+      }
 
-    this.offset = options.getOffset?.(finger, this.thumbElement!, event)
+      if (environment.offset) {
+        this.offset = environment.offset
+      }
+    }
+
+    options.onDragStart?.(finger, event)
 
     const actualPosition = this.offsetPosition(finger)
     const newPosition = this.thumb.move(actualPosition)
@@ -266,31 +321,6 @@ export class ThumbDOM {
     const doc = ownerDocument(this.thumbElement)
     doc.addEventListener('mousemove', this.handleTouchMove)
     doc.addEventListener('mouseup', this.handleTouchEnd)
-  }
-
-  private trackFinger(event: TouchEvent | MouseEvent) {
-    const { touchId } = this
-    // TouchEvent
-    if (touchId !== null && (event as TouchEvent).changedTouches) {
-      const touchEvent = event as TouchEvent
-      for (let i = 0; i < touchEvent.changedTouches.length; i += 1) {
-        const touch = touchEvent.changedTouches[i]
-        if (touch.identifier === touchId) {
-          return {
-            x: touch.clientX,
-            y: touch.clientY
-          }
-        }
-      }
-
-      return null
-    }
-
-    // MouseEvent
-    return {
-      x: (event as MouseEvent).clientX,
-      y: (event as MouseEvent).clientY
-    }
   }
 }
 

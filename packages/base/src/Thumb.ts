@@ -38,14 +38,19 @@ type PrivateThumbOptions = Required<Pick<ThumbOptions, keyof typeof defaultOptio
 export type ThumbOptionsSetter = (privateOptions: PrivateThumbOptions) => PrivateThumbOptions
 
 export class Thumb {
+  /**
+   * Position always has a value.
+   * For the scene that pays attention to the location of Thumb, users usually pass in a default position
+   * For the scene when dragging the position when dragging Thumb, we use `{x: 0, y: 0}` by default
+   */
   private position: Position
   private departurePosition: Position | null = null
+
+  private options!: PrivateThumbOptions
   private positionLimits: {
     min?: PositionLimits
     max?: PositionLimits
   } = defaultPositionLimits
-
-  private options!: PrivateThumbOptions
 
   constructor(position?: Position | null, options?: ThumbOptions) {
     this.position = {
@@ -69,7 +74,7 @@ export class Thumb {
     this.updatePositionLimits()
   }
 
-  updatePositionLimits() {
+  private updatePositionLimits() {
     let { min, max } = this.options
     if (min && typeof min === 'number') {
       min = {
@@ -98,6 +103,9 @@ export class Thumb {
     return { ...this.position }
   }
 
+  /**
+   * Only when the position is changed will it notify and return the new position
+   */
   setPosition(position: Position, quiet?: boolean) {
     const distance = this.calcDistance(position)
 
@@ -150,10 +158,19 @@ export class Thumb {
     }
   }
 
+  /**
+   * Apply to the situation that has changed `Limits`
+   */
   refreshPosition() {
     return this.setPosition(this.getPosition())
   }
 
+  /**
+   * When using the move, we will record the position before the first move
+   * to calculate the move distance
+   *
+   * You can terminate the move through `Thumb.terminateMove()`
+   */
   move(position: Position) {
     if (!this.departurePosition) {
       this.departurePosition = this.getPosition()

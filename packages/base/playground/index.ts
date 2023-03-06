@@ -18,15 +18,17 @@ const thumbDOM = createThumbDOM(thumb, null, {
     thumb.classList.remove('dragging')
   },
 
-  getOffset(finger) {
+  createDraggingEnvironment(finger) {
     const { top, left } = thumb.getBoundingClientRect()
     return {
-      x: finger.x - left,
-      y: finger.y - top
+      offset: {
+        x: finger.x - left,
+        y: finger.y - top
+      }
     }
   },
 
-  onChange(position) {
+  onPositionChange(position) {
     thumb.style.top = `${position.y}px`
     thumb.style.left = `${position.x}px`
   }
