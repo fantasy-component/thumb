@@ -1,0 +1,22 @@
+{
+  "version": "0.0.1",
+  "author": "nooooooom <https://github.com/nooooooom>",
+  "description": "The most basic implementation of all dragging scenarios",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nooooooom/thumb-fantasy.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nooooooom/thumb-fantasy/issues"
+  },
+  "scripts": {
+    "prepare": "pnpm -r run stub",
+    "release": "bumpp package.json packages/*/package.json --commit --push --tag && pnpm -r publish --access public"
+  },
+  "devDependencies": {
+    "bumpp": "^9.0.0",
+    "tsup": "^6.6.3",
+    "vite": "^4.1.4"
+  }
+}

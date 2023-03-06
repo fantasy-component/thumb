@@ -1,0 +1,29 @@
+{
+  "name": "@thumb-fantasy/base",
+  "version": "0.0.1",
+  "author": "nooooooom <https://github.com/nooooooom>",
+  "description": "The most basic implementation of all dragging scenarios",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "keywords": [
+    "thumb",
+    "slider",
+    "draggable",
+    "headless"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nooooooom/thumb-fantasy.git",
+    "directory": "packages/base"
+  },
+  "bugs": {
+    "url": "https://github.com/nooooooom/thumb-fantasy/issues"
+  },
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "play": "cd ./playground & vite"
+  }
+}
