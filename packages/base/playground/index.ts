@@ -1,8 +1,8 @@
-import { createThumbDOM, Position } from '../src'
+import { createThumbDOM } from '../src'
 
 const thumb = document.getElementById('thumb')!
 
-const thumbDOM = createThumbDOM(thumb, {
+const thumbDOM = createThumbDOM(thumb, null, {
   direction: 'omnidirectional',
 
   min: {
@@ -10,18 +10,20 @@ const thumbDOM = createThumbDOM(thumb, {
     y: 0
   },
 
-  onDragStart(event, finger) {
+  onDragStart() {
     thumb.classList.add('dragging')
-
-    const { top, left } = thumb.getBoundingClientRect()
-    thumbDOM.setOffset({
-      x: finger.x - left,
-      y: finger.y - top
-    })
   },
 
   onDragEnd() {
     thumb.classList.remove('dragging')
+  },
+
+  getOffset(finger) {
+    const { top, left } = thumb.getBoundingClientRect()
+    return {
+      x: finger.x - left,
+      y: finger.y - top
+    }
   },
 
   onChange(position) {

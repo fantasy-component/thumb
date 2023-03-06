@@ -17,16 +17,26 @@ function ownerDocument(node: Node | null | undefined): Document {
   return node?.ownerDocument || document
 }
 
+export type OffsetGetter = (
+  finger: Position,
+  element: HTMLElement,
+  event: TouchEvent | MouseEvent
+) => Position | null | undefined
+
+export type DraggingCallback = (finger: Position, event: TouchEvent | MouseEvent) => void
+
 export interface ThumbDOMOptions {
   disabled?: boolean
   direction?: Direction
   min?: number | PositionLimits
   max?: number | PositionLimits
   buttons?: number[]
+  // only run on drag-start
+  getOffset?: OffsetGetter
   onChange?: PositionChangeCallback
-  onDragStart?: (event: TouchEvent | MouseEvent, finger: Position) => void
-  onDragging?: (event: TouchEvent | MouseEvent, finger: Position) => void
-  onDragEnd?: (event: TouchEvent | MouseEvent, finger: Position) => void
+  onDragStart?: DraggingCallback
+  onDragging?: DraggingCallback
+  onDragEnd?: DraggingCallback
 }
 
 const defaultOptions = {
@@ -37,15 +47,14 @@ const defaultOptions = {
 
 export class ThumbDOM {
   private thumb: Thumb
-  private thumbElement: HTMLElement | null = null
+  private thumbElement: HTMLElement | null | undefined = null
   private touchId: number | null = null
-  private dragging: boolean = false
-  private offset: Position | null = null
+  private offset: Position | null | undefined = null
 
   private options!: Required<Pick<ThumbDOMOptions, keyof typeof defaultOptions>> & ThumbDOMOptions
 
-  constructor(element: HTMLElement | null | undefined, options?: ThumbDOMOptions) {
-    this.thumb = createThumb()
+  constructor(element?: HTMLElement | null, options?: ThumbDOMOptions) {
+    this.thumb = createThumb(null)
     this.setOptions(options)
 
     this.handleMouseDown = this.handleMouseDown.bind(this)
@@ -61,10 +70,13 @@ export class ThumbDOM {
   setOptions(options: ThumbDOMOptions = {}) {
     const { disabled, direction, min, max } = (this.options = {
       ...defaultOptions,
+      ...this.options,
       ...options
     })
-    this.thumb.setOptions({ direction, min, max })
+
     this.setDisabled(!!disabled)
+
+    this.thumb.setOptions({ direction, min, max })
   }
 
   get disabled() {
@@ -72,8 +84,9 @@ export class ThumbDOM {
   }
 
   setDisabled(disabled: boolean) {
-    if (this.options.disabled !== disabled) {
-      this.options.disabled = disabled
+    const { options } = this
+    if (options.disabled !== disabled) {
+      options.disabled = disabled
 
       if (disabled) {
         this.stopDragListening()
@@ -82,22 +95,31 @@ export class ThumbDOM {
     }
   }
 
-  setOffset(offset?: Position | null | undefined) {
-    this.offset = offset ? { ...offset } : null
+  setPosition(position: Position, quiet?: boolean) {
+    const value = this.thumb.setPosition(position, quiet)
+    if (value && !quiet) {
+      this.handleChange(value)
+    }
+
+    return value
   }
 
   getPosition() {
     return this.thumb.getPosition()
   }
 
+  refreshPosition() {
+    this.thumb.refreshPosition()
+  }
+
   private offsetPosition({ x, y }: Position) {
     const { offset } = this
 
     if (offset) {
-      if (x && offset.x) {
+      if (x !== undefined && offset.x !== undefined) {
         x -= offset.x
       }
-      if (y && offset.y) {
+      if (y !== undefined && offset.y !== undefined) {
         y -= offset.y
       }
     }
@@ -112,7 +134,7 @@ export class ThumbDOM {
     return this.thumb.getMoveDistance()
   }
 
-  registerThumbElement(element: HTMLElement | null) {
+  registerThumbElement(element: HTMLElement | null | undefined) {
     this.unregisterThumbElement()
 
     this.thumbElement = element
@@ -155,15 +177,18 @@ export class ThumbDOM {
       this.touchId = touch.identifier
     }
 
+    const { options } = this
     const finger = this.trackFinger(event)!
 
-    this.options.onDragStart?.(event, finger)
+    options.onDragStart?.(finger, event)
+
+    this.offset = options.getOffset?.(finger, this.thumbElement!, event)
 
     const actualPosition = this.offsetPosition(finger)
-    const fingerValue = this.thumb.move(actualPosition)
+    const newPosition = this.thumb.move(actualPosition)
 
-    if (fingerValue) {
-      this.handleChange(fingerValue)
+    if (newPosition) {
+      this.handleChange(newPosition)
     }
 
     const doc = ownerDocument(this.thumbElement)
@@ -177,17 +202,13 @@ export class ThumbDOM {
       return
     }
 
-    this.options.onDragging?.(event, finger)
+    this.options.onDragging?.(finger, event)
 
     const actualPosition = this.offsetPosition(finger)
-    const fingerValue = this.thumb.move(actualPosition)
+    const newPosition = this.thumb.move(actualPosition)
 
-    if (!this.dragging) {
-      this.dragging = true
-    }
-
-    if (fingerValue) {
-      this.handleChange(fingerValue)
+    if (newPosition) {
+      this.handleChange(newPosition)
     }
   }
 
@@ -197,16 +218,15 @@ export class ThumbDOM {
       return
     }
 
-    this.options.onDragEnd?.(event, finger)
+    this.options.onDragEnd?.(finger, event)
 
     const actualPosition = this.offsetPosition(finger)
-    const fingerValue = this.thumb.move(actualPosition)
+    const newPosition = this.thumb.move(actualPosition)
 
-    this.dragging = false
     this.touchId = null
 
-    if (fingerValue) {
-      this.handleChange(fingerValue)
+    if (newPosition) {
+      this.handleChange(newPosition)
     }
 
     this.stopDragListening()
@@ -232,13 +252,15 @@ export class ThumbDOM {
 
     const finger = this.trackFinger(event)!
 
-    options.onDragStart?.(event, finger)
+    options.onDragStart?.(finger, event)
+
+    this.offset = options.getOffset?.(finger, this.thumbElement!, event)
 
     const actualPosition = this.offsetPosition(finger)
-    const fingerValue = this.thumb.move(actualPosition)
+    const newPosition = this.thumb.move(actualPosition)
 
-    if (fingerValue) {
-      this.handleChange(fingerValue)
+    if (newPosition) {
+      this.handleChange(newPosition)
     }
 
     const doc = ownerDocument(this.thumbElement)
@@ -272,6 +294,16 @@ export class ThumbDOM {
   }
 }
 
-export function createThumbDOM(element: HTMLElement | null | undefined, options?: ThumbDOMOptions) {
-  return new ThumbDOM(element, options)
+export function createThumbDOM(
+  element?: HTMLElement | null,
+  position?: Position | null,
+  options?: ThumbDOMOptions
+) {
+  const thumbDOM = new ThumbDOM(element, options)
+
+  if (position) {
+    thumbDOM.setPosition(position, true)
+  }
+
+  return thumbDOM
 }

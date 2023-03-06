@@ -23,6 +23,17 @@
   },
   "sideEffects": false,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsup",
+    "play": "cd ./playground & vite"
+  },
+  "dependencies": {
+    "@thumb-fantasy/base": "workspace:*",
+    "vue-reactivity-fantasy": "^0.0.7"
+  },
+  "devDependencies": {
+    "vue": "^3.2.47"
+  },
+  "peerDependencies": {
+    "vue": "^2.7.0 || ^3.2.0"
   }
 }

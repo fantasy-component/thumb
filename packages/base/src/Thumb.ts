@@ -41,13 +41,13 @@ export class Thumb {
   private position: Position
   private departurePosition: Position | null = null
   private positionLimits: {
-    min: PositionLimits | undefined
-    max: PositionLimits | undefined
+    min?: PositionLimits
+    max?: PositionLimits
   } = defaultPositionLimits
 
   private options!: PrivateThumbOptions
 
-  constructor(position?: Position | null | undefined, options?: ThumbOptions) {
+  constructor(position?: Position | null, options?: ThumbOptions) {
     this.position = {
       x: 0,
       y: 0,
@@ -56,7 +56,7 @@ export class Thumb {
     this.setOptions(options)
   }
 
-  setOptions(options?: ThumbOptions | ThumbOptionsSetter) {
+  setOptions(options: ThumbOptions | ThumbOptionsSetter | null | undefined) {
     if (typeof options === 'function') {
       this.options = options({ ...this.options })
     } else {
@@ -98,10 +98,6 @@ export class Thumb {
     return { ...this.position }
   }
 
-  restrictedPosition(quiet?: boolean) {
-    this.setPosition(this.position, quiet)
-  }
-
   setPosition(position: Position, quiet?: boolean) {
     const distance = this.calcDistance(position)
 
@@ -119,30 +115,6 @@ export class Thumb {
       }
 
       return newPosition
-    }
-  }
-
-  move(position: Position) {
-    if (!this.departurePosition) {
-      this.departurePosition = this.getPosition()
-    }
-
-    return this.setPosition(position)
-  }
-
-  terminateMove() {
-    this.departurePosition = null
-  }
-
-  getMoveDistance() {
-    const { departurePosition } = this
-
-    if (departurePosition) {
-      const { position } = this
-      return {
-        x: position.x - departurePosition.x,
-        y: position.y - departurePosition.y
-      }
     }
   }
 
@@ -174,6 +146,34 @@ export class Thumb {
       return {
         x: dx,
         y: dy
+      }
+    }
+  }
+
+  refreshPosition() {
+    return this.setPosition(this.getPosition())
+  }
+
+  move(position: Position) {
+    if (!this.departurePosition) {
+      this.departurePosition = this.getPosition()
+    }
+
+    return this.setPosition(position)
+  }
+
+  terminateMove() {
+    this.departurePosition = null
+  }
+
+  getMoveDistance() {
+    const { departurePosition } = this
+
+    if (departurePosition) {
+      const { position } = this
+      return {
+        x: position.x - departurePosition.x,
+        y: position.y - departurePosition.y
       }
     }
   }
