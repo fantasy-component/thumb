@@ -1,13 +1,5 @@
-import { Position } from '@thumb-fantasy/base'
-import {
-  cloneElement,
-  isValidElement,
-  ReactNode,
-  useEffect,
-  useMemo,
-  useRef,
-  useState
-} from 'react'
+import { PartialPosition, Position } from '@thumb-fantasy/base'
+import { cloneElement, isValidElement, ReactNode, useEffect, useMemo, useState } from 'react'
 import { useThumbDOM, UseThumbDOMProps } from './hooks/useThumbDOM'
 import { DraggingData } from './interface'
 import { ThumbContext } from './ThumbContext'
@@ -15,8 +7,8 @@ import { ThumbContext } from './ThumbContext'
 export type ChangeCallback = (position: Position, dragDistance?: Position) => void
 
 export interface ThumbProps extends UseThumbDOMProps {
-  position?: Position
-  defaultPosition?: Position
+  position?: PartialPosition
+  defaultPosition?: PartialPosition
   onChange?: ChangeCallback
 }
 

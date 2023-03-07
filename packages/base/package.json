@@ -24,6 +24,7 @@
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
+    "stub": "tsup",
     "serve": "tsup --watch",
     "play": "cd ./playground & vite"
   },

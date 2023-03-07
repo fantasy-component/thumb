@@ -5,6 +5,8 @@ export interface Position {
   y: number
 }
 
+export type PartialPosition = Partial<Position>
+
 export interface PositionLimits {
   x?: number
   y?: number
@@ -52,7 +54,7 @@ export class Thumb {
     max?: PositionLimits
   } = defaultPositionLimits
 
-  constructor(position?: Position | null, options?: ThumbOptions) {
+  constructor(position?: PartialPosition | null, options?: ThumbOptions) {
     this.position = {
       x: 0,
       y: 0,
@@ -106,7 +108,7 @@ export class Thumb {
   /**
    * Only when the position is changed will it notify and return the new position
    */
-  setPosition(position: Position, quiet?: boolean) {
+  setPosition(position: PartialPosition, quiet?: boolean) {
     const distance = this.calcDistance(position)
 
     if (distance) {
@@ -126,14 +128,13 @@ export class Thumb {
     }
   }
 
-  calcDistance({ x, y }: Position) {
+  calcDistance({ x, y }: PartialPosition) {
     const { options, position, positionLimits } = this
     const { direction } = options
     const { min, max } = positionLimits
 
     let dx = 0
     let dy = 0
-
     if (x !== undefined) {
       x = Math_max(min && min.x, Math_min(max && max.x, x))
 
@@ -141,7 +142,6 @@ export class Thumb {
         dx = x - position.x
       }
     }
-
     if (y !== undefined) {
       y = Math_max(min && min.y, Math_min(max && max.y, y))
 
@@ -171,7 +171,7 @@ export class Thumb {
    *
    * You can terminate the move through `Thumb.terminateMove()`
    */
-  move(position: Position) {
+  move(position: PartialPosition) {
     if (!this.departurePosition) {
       this.departurePosition = this.getPosition()
     }
@@ -196,6 +196,6 @@ export class Thumb {
   }
 }
 
-export function createThumb(position?: Position | null, options?: ThumbOptions) {
+export function createThumb(position?: PartialPosition | null, options?: ThumbOptions) {
   return new Thumb(position, options)
 }

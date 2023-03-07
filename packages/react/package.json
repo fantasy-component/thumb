@@ -2,7 +2,7 @@
   "name": "@thumb-fantasy/react",
   "version": "0.0.1",
   "author": "nooooooom <https://github.com/nooooooom>",
-  "description": "",
+  "description": "Thumb base for React DOM",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -24,6 +24,7 @@
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
+    "stub": "tsup",
     "play": "cd ./playground & vite"
   },
   "dependencies": {

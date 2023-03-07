@@ -1,5 +1,5 @@
 import { createThumbDOM, Position, ThumbDOM, ThumbDOMOptions } from '@thumb-fantasy/base'
-import * as React from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 export type DraggingCallback = (
   position: Position,
@@ -33,48 +33,61 @@ export function useThumbDOM(props: UseThumbDOMProps): UseThumbDOMReturn {
     onDragEnd
   } = props
 
-  const thumb = React.useRef<HTMLElement | null>(null)
-  const [thumbDOM] = React.useState(() => {
-    return createThumbDOM()
-  })
+  const callbacks = useRef<Pick<UseThumbDOMProps, 'onDragStart' | 'onDragging' | 'onDragEnd'>>()
 
-  const [position, setPosition] = React.useState(thumbDOM.getPosition())
-  const [dragging, setDragging] = React.useState(false)
-  const [dragDistance, setDragDistance] = React.useState<Position>()
+  const thumb = useRef<HTMLElement | null>(null)
+  const [thumbDOM] = useState(() => createThumbDOM())
 
-  React.useEffect(() => {
+  const [position, setPosition] = useState(thumbDOM.getPosition())
+  const [dragging, setDragging] = useState(false)
+  const [dragDistance, setDragDistance] = useState<Position>()
+
+  useEffect(() => {
+    callbacks.current = {
+      onDragStart,
+      onDragEnd,
+      onDragging
+    }
+  }, [onDragStart, onDragEnd, onDragging])
+
+  useEffect(() => {
     thumbDOM.setOptions({
-      direction,
-      min,
-      max,
-      createDraggingEnvironment,
       onPositionChange(finger) {
         setPosition(finger)
         setDragDistance(thumbDOM.getDragDistance())
       },
       onDragStart(finger, event) {
         setDragging(true)
-        onDragStart?.(finger, thumb.current!, event)
+        callbacks.current!.onDragStart?.(finger, thumb.current!, event)
       },
       onDragging(finger, event) {
-        onDragging?.(finger, thumb.current!, event)
+        callbacks.current!.onDragging?.(finger, thumb.current!, event)
       },
       onDragEnd(finger, event) {
         setDragging(false)
-        onDragEnd?.(finger, thumb.current!, event)
+        callbacks.current!.onDragEnd?.(finger, thumb.current!, event)
       }
     })
-  }, [direction, min, max, createDraggingEnvironment, onDragStart, onDragEnd, onDragging])
+  }, [])
 
-  React.useEffect(() => {
+  useEffect(() => {
     thumbDOM.setDisabled(!!disabled)
   }, [disabled])
 
-  const setThumb = React.useCallback((node: HTMLElement | null) => {
+  useEffect(() => {
+    thumbDOM.setOptions({
+      direction,
+      min,
+      max,
+      createDraggingEnvironment
+    })
+  }, [direction, min, max, createDraggingEnvironment])
+
+  const setThumb = useCallback((node: HTMLElement | null) => {
     thumbDOM.registerThumbElement(node)
   }, [])
 
-  return React.useMemo(
+  return useMemo(
     () => ({
       thumb: setThumb,
       position,

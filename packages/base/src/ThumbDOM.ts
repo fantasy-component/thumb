@@ -1,4 +1,11 @@
-import { createThumb, Position, PositionChangeCallback, Thumb, ThumbOptions } from './Thumb'
+import {
+  createThumb,
+  PartialPosition,
+  Position,
+  PositionChangeCallback,
+  Thumb,
+  ThumbOptions
+} from './Thumb'
 
 export const BUTTONS = {
   LEFT: 0,
@@ -16,7 +23,7 @@ function ownerDocument(node: Node | null | undefined): Document {
 
 export interface DraggingEnvironment {
   disabled?: boolean
-  offset?: Position
+  offset?: PartialPosition
 }
 
 export type DraggingEnvironmentCreator = (
@@ -55,7 +62,7 @@ export class ThumbDOM {
 
   private thumbElement: HTMLElement | null | undefined = null
   private touchId: number | null = null
-  private offset: Position | null | undefined = null
+  private offset: PartialPosition | null | undefined = null
 
   private options!: Required<Pick<ThumbDOMOptions, keyof typeof defaultOptions>> & ThumbDOMOptions
 
@@ -105,7 +112,7 @@ export class ThumbDOM {
     return this.thumb.getPosition()
   }
 
-  setPosition(position: Position, quiet?: boolean) {
+  setPosition(position: PartialPosition, quiet?: boolean) {
     const value = this.thumb.setPosition(position, quiet)
     if (value && !quiet) {
       this.handleChange(value)
@@ -180,7 +187,7 @@ export class ThumbDOM {
     }
   }
 
-  private offsetPosition({ x, y }: Position) {
+  private offsetPosition({ x, y }: PartialPosition) {
     const { offset } = this
 
     if (offset) {
@@ -319,7 +326,7 @@ export class ThumbDOM {
 
 export function createThumbDOM(
   element?: HTMLElement | null,
-  position?: Position | null,
+  position?: PartialPosition | null,
   options?: ThumbDOMOptions
 ) {
   const thumbDOM = new ThumbDOM(element, options)
