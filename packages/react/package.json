@@ -27,8 +27,7 @@
     "play": "cd ./playground & vite"
   },
   "dependencies": {
-    "@thumb-fantasy/base": "workspace:*",
-    "clsx": "^1.2.1"
+    "@thumb-fantasy/base": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^18.0.28",

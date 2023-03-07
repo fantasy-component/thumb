@@ -15,15 +15,13 @@ export interface UseThumbDOMProps
 }
 
 export interface UseThumbDOMReturn extends Pick<ThumbDOM, 'setPosition'> {
-  position: React.MutableRefObject<Position>
+  thumb: (node: HTMLElement | null) => void
+  position: Position
   dragging: boolean
   dragDistance: Position | undefined
 }
 
-export function useThumbDOM(
-  element: HTMLElement | null | undefined,
-  props: UseThumbDOMProps
-): UseThumbDOMReturn {
+export function useThumbDOM(props: UseThumbDOMProps): UseThumbDOMReturn {
   const {
     disabled,
     direction = 'horizontal',
@@ -35,19 +33,14 @@ export function useThumbDOM(
     onDragEnd
   } = props
 
+  const thumb = React.useRef<HTMLElement | null>(null)
   const [thumbDOM] = React.useState(() => {
     return createThumbDOM()
   })
 
-  const position = React.useRef(thumbDOM.getPosition())
+  const [position, setPosition] = React.useState(thumbDOM.getPosition())
   const [dragging, setDragging] = React.useState(false)
   const [dragDistance, setDragDistance] = React.useState<Position>()
-
-  React.useEffect(() => {
-    thumbDOM.registerThumbElement(element)
-
-    return () => thumbDOM.unregisterThumbElement()
-  }, [element])
 
   React.useEffect(() => {
     thumbDOM.setOptions({
@@ -56,21 +49,19 @@ export function useThumbDOM(
       max,
       createDraggingEnvironment,
       onPositionChange(finger) {
-        position.current = finger
+        setPosition(finger)
         setDragDistance(thumbDOM.getDragDistance())
       },
       onDragStart(finger, event) {
         setDragging(true)
-
-        onDragStart?.(finger, element!, event)
+        onDragStart?.(finger, thumb.current!, event)
       },
       onDragging(finger, event) {
-        onDragging?.(finger, element!, event)
+        onDragging?.(finger, thumb.current!, event)
       },
       onDragEnd(finger, event) {
         setDragging(false)
-
-        onDragEnd?.(finger, element!, event)
+        onDragEnd?.(finger, thumb.current!, event)
       }
     })
   }, [direction, min, max, createDraggingEnvironment, onDragStart, onDragEnd, onDragging])
@@ -79,10 +70,18 @@ export function useThumbDOM(
     thumbDOM.setDisabled(!!disabled)
   }, [disabled])
 
-  return {
-    position,
-    setPosition: (position) => thumbDOM.setPosition(position),
-    dragging,
-    dragDistance
-  }
+  const setThumb = React.useCallback((node: HTMLElement | null) => {
+    thumbDOM.registerThumbElement(node)
+  }, [])
+
+  return React.useMemo(
+    () => ({
+      thumb: setThumb,
+      position,
+      dragging,
+      dragDistance,
+      setPosition: (position) => thumbDOM.setPosition(position)
+    }),
+    [position, dragging, dragDistance]
+  )
 }

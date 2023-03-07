@@ -1,9 +1,11 @@
 import { DraggingEnvironmentCreator, Position, Thumb } from '../src'
 import { createRoot } from 'react-dom/client'
-import { useState } from 'react'
+import { useContext, useState } from 'react'
+import { ThumbContext } from '../src/ThumbContext'
 
 function App() {
   const [position, setPosition] = useState<Position>()
+  const draggingData = useContext(ThumbContext)
 
   const createDraggingEnvironment: DraggingEnvironmentCreator = (position, element) => {
     const { top, left } = element.getBoundingClientRect()
@@ -17,20 +19,23 @@ function App() {
 
   return (
     <Thumb
-      id='thumb'
       position={position}
       defaultPosition={{
         x: 20,
         y: 20
       }}
-      draggingClassName='dragging'
-      style={{
-        top: `${position?.y || 0}px`,
-        left: `${position?.x || 0}px`
-      }}
       createDraggingEnvironment={createDraggingEnvironment}
       onChange={(newPosition) => setPosition(newPosition)}
-    />
+    >
+      <div
+        id='thumb'
+        className={draggingData?.dragging ? 'dragging' : ''}
+        style={{
+          top: `${position?.y || 0}px`,
+          left: `${position?.x || 0}px`
+        }}
+      />
+    </Thumb>
   )
 }
 
