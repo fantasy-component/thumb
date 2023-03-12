@@ -25,7 +25,8 @@
   "scripts": {
     "build": "tsup",
     "serve": "tsup --watch",
-    "play": "cd ./playground & vite"
+    "play": "cd ./playground & vite",
+    "prepublish": "pnpm -r run build"
   },
   "devDependencies": {
     "tsup": "^6.6.3"

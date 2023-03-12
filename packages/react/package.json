@@ -24,7 +24,8 @@
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
-    "play": "cd ./playground & vite"
+    "play": "cd ./playground & vite",
+    "prepublish": "pnpm -r run build"
   },
   "dependencies": {
     "@thumb-fantasy/base": "workspace:*"

@@ -10,7 +10,6 @@
     "url": "https://github.com/fantasy-component/thumb-fantasy/issues"
   },
   "scripts": {
-    "prepublish": "pnpm -r run build",
     "release": "bumpp packages/*/package.json --commit --push --tag && pnpm -r publish --access public"
   },
   "devDependencies": {
