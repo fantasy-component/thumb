@@ -2,7 +2,7 @@
   "name": "@thumb-fantasy/vue",
   "version": "0.0.1",
   "author": "nooooooom <https://github.com/nooooooom>",
-  "description": "",
+  "description": "Thumb base for Vue",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -10,7 +10,7 @@
     "thumb",
     "slider",
     "draggable",
-    "react"
+    "vue"
   ],
   "license": "MIT",
   "repository": {
@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@thumb-fantasy/base": "workspace:*",
+    "vue-lib-toolkit": "^0.0.5",
     "vue-reactivity-fantasy": "^0.0.7"
   },
   "devDependencies": {

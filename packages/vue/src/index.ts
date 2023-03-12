@@ -1,8 +1,10 @@
-export * from './components/Thumb'
+export * from './Thumb'
 export * from './composables/useThumbDOM'
+export { BUTTONS } from '@thumb-fantasy/base'
 export type {
   Direction,
+  DraggingContext,
+  DraggingContextCreator,
   Position,
-  PositionLimits,
-  PositionChangeCallback
+  PositionLimits
 } from '@thumb-fantasy/base'
