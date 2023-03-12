@@ -47,14 +47,14 @@ export function useThumbDOM(
     },
     onDragStart(finger, event) {
       dragging.value = true
-      props?.onDragStart?.(finger, thumbDOM.thumbElement!, event)
+      props?.onDragStart?.(finger, thumbDOM.getThumbElement()!, event)
     },
     onDragging(finger, event) {
-      props?.onDragging?.(finger, thumbDOM.thumbElement!, event)
+      props?.onDragging?.(finger, thumbDOM.getThumbElement()!, event)
     },
     onDragEnd(finger, event) {
       dragging.value = false
-      props?.onDragEnd?.(finger, thumbDOM.thumbElement!, event)
+      props?.onDragEnd?.(finger, thumbDOM.getThumbElement()!, event)
     }
   })
 
