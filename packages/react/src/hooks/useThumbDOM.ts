@@ -58,14 +58,14 @@ export function useThumbDOM(props: UseThumbDOMProps): UseThumbDOMReturn {
       },
       onDragStart(finger, event) {
         setDragging(true)
-        callbacks.current!.onDragStart?.(finger, thumb.current!, event)
+        callbacks.current!.onDragStart?.(finger, thumbDOM.thumbElement!, event)
       },
       onDragging(finger, event) {
-        callbacks.current!.onDragging?.(finger, thumb.current!, event)
+        callbacks.current!.onDragging?.(finger, thumbDOM.thumbElement!, event)
       },
       onDragEnd(finger, event) {
         setDragging(false)
-        callbacks.current!.onDragEnd?.(finger, thumb.current!, event)
+        callbacks.current!.onDragEnd?.(finger, thumbDOM.thumbElement!, event)
       }
     })
   }, [])

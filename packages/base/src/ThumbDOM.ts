@@ -130,6 +130,10 @@ export class ThumbDOM {
     return this.thumb.getMoveDistance()
   }
 
+  getThumbElement() {
+    return this.thumbElement
+  }
+
   registerThumbElement(element: HTMLElement | null | undefined) {
     this.unregisterThumbElement()
 
