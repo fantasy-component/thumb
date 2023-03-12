@@ -1,6 +1,6 @@
 {
   "name": "@thumb-fantasy/react",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "author": "nooooooom <https://github.com/nooooooom>",
   "description": "Thumb base for React DOM",
   "main": "dist/index.js",

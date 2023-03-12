@@ -1,6 +1,6 @@
 {
   "name": "@thumb-fantasy/base",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "author": "nooooooom <https://github.com/nooooooom>",
   "description": "The most basic implementation of all dragging scenarios",
   "main": "dist/index.js",
