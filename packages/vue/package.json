@@ -15,11 +15,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nooooooom/thumb-fantasy.git",
+    "url": "git+https://github.com/fantasy-component/thumb-fantasy.git",
     "directory": "packages/vue"
   },
   "bugs": {
-    "url": "https://github.com/nooooooom/thumb-fantasy/issues"
+    "url": "https://github.com/fantasy-component/thumb-fantasy/issues"
   },
   "sideEffects": false,
   "scripts": {
