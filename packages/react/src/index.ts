@@ -3,8 +3,8 @@ export * from './hooks/useThumbDOM'
 export { BUTTONS } from '@thumb-fantasy/base'
 export type {
   Direction,
-  DraggingEnvironment,
-  DraggingEnvironmentCreator,
+  DraggingContext,
+  DraggingContextCreator,
   Position,
   PositionLimits
 } from '@thumb-fantasy/base'

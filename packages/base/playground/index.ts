@@ -18,7 +18,7 @@ const thumbDOM = createThumbDOM(thumb, null, {
     thumb.classList.remove('dragging')
   },
 
-  createDraggingEnvironment(finger) {
+  createDraggingContext(finger) {
     const { top, left } = thumb.getBoundingClientRect()
     return {
       offset: {

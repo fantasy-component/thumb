@@ -21,16 +21,16 @@ function ownerDocument(node: Node | null | undefined): Document {
   return node?.ownerDocument || document
 }
 
-export interface DraggingEnvironment {
+export interface DraggingContext {
   disabled?: boolean
   offset?: PartialPosition
 }
 
-export type DraggingEnvironmentCreator = (
+export type DraggingContextCreator = (
   finger: Position,
   element: HTMLElement,
   event: TouchEvent | MouseEvent
-) => DraggingEnvironment | null | undefined
+) => DraggingContext | null | undefined
 
 export type DraggingCallback = (finger: Position, event: TouchEvent | MouseEvent) => void
 
@@ -42,9 +42,10 @@ export interface ThumbDOMOptions extends Omit<ThumbOptions, 'onChange'> {
    */
   buttons?: number[]
   /**
-   * Create an environment for dragging startup, only run on drag-start
+   * Create a context for dragging startup
+   * only run on drag-start
    */
-  createDraggingEnvironment?: DraggingEnvironmentCreator
+  createDraggingContext?: DraggingContextCreator
   onPositionChange?: PositionChangeCallback
   onDragStart?: DraggingCallback
   onDragging?: DraggingCallback
@@ -217,7 +218,7 @@ export class ThumbDOM {
 
     const finger = this.trackFinger(event)!
 
-    const environment = this.options.createDraggingEnvironment?.(finger, this.thumbElement!, event)
+    const environment = this.options.createDraggingContext?.(finger, this.thumbElement!, event)
     if (environment) {
       if (environment.disabled) {
         return
@@ -297,15 +298,15 @@ export class ThumbDOM {
     event.preventDefault()
 
     const finger = this.trackFinger(event)!
+    const context = this.options.createDraggingContext?.(finger, this.thumbElement!, event)
 
-    const environment = this.options.createDraggingEnvironment?.(finger, this.thumbElement!, event)
-    if (environment) {
-      if (environment.disabled) {
+    if (context) {
+      if (context.disabled) {
         return
       }
 
-      if (environment.offset) {
-        this.offset = environment.offset
+      if (context.offset) {
+        this.offset = context.offset
       }
     }
 

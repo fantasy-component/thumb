@@ -1,4 +1,4 @@
-import { DraggingEnvironmentCreator, Position, Thumb } from '../src'
+import { DraggingContextCreator, Position, Thumb } from '../src'
 import { createRoot } from 'react-dom/client'
 import { forwardRef, Fragment, useCallback, useState } from 'react'
 import { ThumbContext } from '../src/ThumbContext'
@@ -25,7 +25,7 @@ function App() {
   const [position, setPosition] = useState<Position>()
   const [type, setType] = useState<string>('props')
 
-  const createDraggingEnvironment: DraggingEnvironmentCreator = useCallback((position, element) => {
+  const createDraggingContext: DraggingContextCreator = useCallback((position, element) => {
     const { top, left } = element.getBoundingClientRect()
     return {
       offset: {
@@ -66,7 +66,7 @@ function App() {
         defaultPosition={{
           x: 200
         }}
-        createDraggingEnvironment={createDraggingEnvironment}
+        createDraggingContext={createDraggingContext}
         onChange={(newPosition) => setPosition(newPosition)}
       >
         {type === 'props' ? (

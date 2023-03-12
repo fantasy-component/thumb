@@ -27,7 +27,7 @@ export function useThumbDOM(props: UseThumbDOMProps): UseThumbDOMReturn {
     direction = 'horizontal',
     min,
     max,
-    createDraggingEnvironment,
+    createDraggingContext,
     onDragStart,
     onDragging,
     onDragEnd
@@ -79,12 +79,16 @@ export function useThumbDOM(props: UseThumbDOMProps): UseThumbDOMReturn {
       direction,
       min,
       max,
-      createDraggingEnvironment
+      createDraggingContext
     })
-  }, [direction, min, max, createDraggingEnvironment])
+  }, [direction, min, max, createDraggingContext])
 
   const setThumb = useCallback((node: HTMLElement | null) => {
     thumbDOM.registerThumbElement(node)
+
+    return () => {
+      thumbDOM.unregisterThumbElement()
+    }
   }, [])
 
   return useMemo(

@@ -11,11 +11,12 @@
     "url": "https://github.com/nooooooom/thumb-fantasy/issues"
   },
   "scripts": {
-    "prepare": "pnpm -r run stub",
+    "prepublish": "pnpm -r run build",
     "release": "bumpp package.json packages/*/package.json --commit --push --tag && pnpm -r publish --access public"
   },
   "devDependencies": {
     "@types/react-dom": "^18.0.11",
+    "@vitejs/plugin-vue-jsx": "^3.0.0",
     "bumpp": "^9.0.0",
     "react-dom": "^18.2.0",
     "tsup": "^6.6.3",
