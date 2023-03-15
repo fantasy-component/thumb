@@ -1,6 +1,6 @@
 {
   "name": "@thumb-fantasy/vue",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "author": "nooooooom <https://github.com/nooooooom>",
   "description": "Thumb base for Vue",
   "main": "dist/index.js",
