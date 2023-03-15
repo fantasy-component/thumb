@@ -26,9 +26,6 @@
     "build": "tsup",
     "serve": "tsup --watch",
     "play": "cd ./playground & vite",
-    "prepublish": "pnpm -r run build"
-  },
-  "devDependencies": {
-    "tsup": "^6.6.3"
+    "prepublish": "pnpm run build"
   }
 }

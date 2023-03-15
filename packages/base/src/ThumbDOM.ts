@@ -1,11 +1,6 @@
-import {
-  createThumb,
-  PartialPosition,
-  Position,
-  PositionChangeCallback,
-  Thumb,
-  ThumbOptions
-} from './Thumb'
+import { ChangeCallback, createThumb, Thumb, ThumbOptions, ThumbPayload } from './Thumb'
+import { Coords, Middleware, PartialCoords } from './types'
+import { compose } from './utils/compose'
 
 export const BUTTONS = {
   LEFT: 0,
@@ -13,62 +8,89 @@ export const BUTTONS = {
   RIGHT: 2
 } as const
 
-function isAllowedButtonType(event: MouseEvent, buttons: number[]) {
-  return buttons.includes(event.button)
-}
-
 function ownerDocument(node: Node | null | undefined): Document {
   return node?.ownerDocument || document
 }
 
-export interface DraggingContext {
-  disabled?: boolean
-  offset?: PartialPosition
+function isAllowedButtonType(event: MouseEvent, buttons: number[]) {
+  return buttons.includes(event.button)
 }
 
-export type DraggingContextCreator = (
-  finger: Position,
+export type DOMCoordsChangeType = 'manual' | 'drag-start' | 'dragging' | 'drag-end'
+
+interface ManualPayload {
+  readonly type: 'manual'
+  readonly element?: HTMLElement
+}
+
+interface DragPayload {
+  readonly type: Omit<DOMCoordsChangeType, ManualPayload['type']>
+  readonly element: HTMLElement
+  readonly event: TouchEvent | MouseEvent
+}
+
+export interface ThumbDOMPayload extends ThumbPayload {
+  dom: ManualPayload | DragPayload
+}
+
+export type DraggingCallback<T = void> = (
+  coords: Coords,
   element: HTMLElement,
   event: TouchEvent | MouseEvent
-) => DraggingContext | null | undefined
+) => T
 
-export type DraggingCallback = (finger: Position, event: TouchEvent | MouseEvent) => void
-
-export interface ThumbDOMOptions extends Omit<ThumbOptions, 'onChange'> {
+export interface ThumbDOMOptions extends Omit<ThumbOptions, 'middleware' | 'onChange'> {
+  /**
+   * Whether to disable dragging.
+   */
   disabled?: boolean
   /**
-   * Allowed button types
+   * Allows to control the change of coords through the form of middleware.
+   */
+  middleware?: Middleware<ThumbDOMPayload>
+  /**
+   * Allowed button types.
    * https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button
    */
   buttons?: number[]
   /**
-   * Create a context for dragging startup
-   * only run on drag-start
+   * The callback function when the coords changes.
+   * Maybe change actively, or it is possibly caused by dragging.
    */
-  createDraggingContext?: DraggingContextCreator
-  onPositionChange?: PositionChangeCallback
-  onDragStart?: DraggingCallback
+  onChange?: ChangeCallback
+  /**
+   * The callback function before dragging starts.
+   * If it returns `false`, the dragging will not start.
+   */
+  onDragStart?: DraggingCallback<boolean | void>
+  /**
+   * The callback function when dragging.
+   */
   onDragging?: DraggingCallback
+  /**
+   * The callback function before dragging ends.
+   */
   onDragEnd?: DraggingCallback
 }
 
 const defaultOptions = {
   disabled: false,
-  direction: 'horizontal',
-  buttons: [BUTTONS.LEFT] as any[]
+  buttons: [BUTTONS.LEFT]
 } as const
 
 export class ThumbDOM {
   private thumb: Thumb
-
   private thumbElement: HTMLElement | null | undefined = null
   private touchId: number | null = null
-  private offset: PartialPosition | null | undefined = null
+  private payload!: ManualPayload | DragPayload
 
   private options!: Required<Pick<ThumbDOMOptions, keyof typeof defaultOptions>> & ThumbDOMOptions
 
   constructor(element?: HTMLElement | null, options?: ThumbDOMOptions) {
-    this.thumb = createThumb(null)
+    this.thumb = createThumb(null, {
+      onChange: (coords) => this.options.onChange?.(coords)
+    })
+
     this.setOptions(options)
 
     this.handleMouseDown = this.handleMouseDown.bind(this)
@@ -81,16 +103,40 @@ export class ThumbDOM {
     }
   }
 
-  setOptions(options: ThumbDOMOptions = {}) {
-    const { disabled, direction, min, max } = (this.options = {
+  setOptions(partialOptions: ThumbDOMOptions = {}) {
+    const { options } = this
+    const { disabled, middleware } = (this.options = {
       ...defaultOptions,
-      ...this.options,
-      ...options
+      ...options,
+      ...partialOptions,
+      buttons: partialOptions.buttons || options?.buttons || defaultOptions.buttons
     })
 
     this.setDisabled(!!disabled)
 
-    this.thumb.setOptions({ direction, min, max })
+    const middlewares = [this.createDOMMiddlewarePayloadSupplements(), middleware].filter(
+      Boolean
+    ) as Middleware[]
+    this.thumb.setOptions({
+      middleware: compose(...middlewares)
+    })
+  }
+
+  private createDOMMiddlewarePayloadSupplements(): Middleware<ThumbPayload, ThumbDOMPayload> {
+    return (payload) => {
+      return {
+        ...payload,
+        dom: this.payload
+      }
+    }
+  }
+
+  private setPayload(type: DOMCoordsChangeType, event?: TouchEvent | MouseEvent) {
+    this.payload = {
+      type,
+      element: this.thumbElement!,
+      event
+    } as any
   }
 
   get disabled() {
@@ -104,30 +150,17 @@ export class ThumbDOM {
 
       if (disabled) {
         this.stopDragListening()
-        this.thumb.terminateMove()
       }
     }
   }
 
-  getPosition() {
-    return this.thumb.getPosition()
+  getCoords() {
+    return this.thumb.getCoords()
   }
 
-  setPosition(position: PartialPosition, quiet?: boolean) {
-    const value = this.thumb.setPosition(position, quiet)
-    if (value && !quiet) {
-      this.handleChange(value)
-    }
-
-    return value
-  }
-
-  refreshPosition() {
-    this.thumb.refreshPosition()
-  }
-
-  getDragDistance() {
-    return this.thumb.getMoveDistance()
+  setCoords(coords: PartialCoords, quiet?: boolean) {
+    this.setPayload('manual')
+    return this.thumb.setCoords(coords, quiet)
   }
 
   getThumbElement() {
@@ -136,8 +169,8 @@ export class ThumbDOM {
 
   registerThumbElement(element: HTMLElement | null | undefined) {
     this.unregisterThumbElement()
-
     this.thumbElement = element
+
     if (element) {
       element.addEventListener('mousedown', this.handleMouseDown)
       element.addEventListener('touchstart', this.handleTouchStart)
@@ -150,7 +183,6 @@ export class ThumbDOM {
       thumbElement.removeEventListener('mousedown', this.handleMouseDown)
       thumbElement.removeEventListener('touchstart', this.handleTouchStart)
       this.stopDragListening()
-      this.thumb.terminateMove()
       this.thumbElement = null
     }
   }
@@ -163,8 +195,84 @@ export class ThumbDOM {
     doc.removeEventListener('touchend', this.handleTouchEnd)
   }
 
-  private handleChange(position: Position) {
-    this.options.onPositionChange?.(position)
+  private handleTouchStart(event: TouchEvent) {
+    if (this.disabled) {
+      return
+    }
+
+    const touch = event.changedTouches[0]
+    if (touch) {
+      this.touchId = touch.identifier
+    }
+
+    const finger = this.trackFinger(event)!
+
+    const enableDrag = this.options.onDragStart?.(finger, this.thumbElement!, event)
+    if (enableDrag === false) {
+      return
+    }
+
+    this.setPayload('drag-start', event)
+    this.thumb.setCoords(finger)
+
+    const doc = ownerDocument(this.thumbElement)
+    doc.addEventListener('touchmove', this.handleTouchMove)
+    doc.addEventListener('touchend', this.handleTouchEnd)
+  }
+
+  private handleTouchMove(event: TouchEvent | MouseEvent) {
+    const finger = this.trackFinger(event)
+    if (!finger) {
+      return
+    }
+
+    this.options.onDragging?.(finger, this.thumbElement!, event)
+
+    this.setPayload('dragging', event)
+    this.thumb.setCoords(finger)
+  }
+
+  private handleTouchEnd(event: TouchEvent | MouseEvent) {
+    const finger = this.trackFinger(event)
+    if (!finger) {
+      return
+    }
+
+    this.setPayload('drag-end', event)
+    this.thumb.setCoords(finger)
+
+    this.touchId = null
+
+    this.options.onDragEnd?.(finger, this.thumbElement!, event)
+
+    this.stopDragListening()
+  }
+
+  private handleMouseDown(event: MouseEvent) {
+    if (
+      this.disabled ||
+      event.defaultPrevented ||
+      !isAllowedButtonType(event, this.options.buttons)
+    ) {
+      return
+    }
+
+    // Avoid text selection
+    event.preventDefault()
+
+    const finger = this.trackFinger(event)!
+
+    const enableDrag = this.options.onDragStart?.(finger, this.thumbElement!, event)
+    if (enableDrag === false) {
+      return
+    }
+
+    this.setPayload('drag-start', event)
+    this.thumb.setCoords(finger)
+
+    const doc = ownerDocument(this.thumbElement)
+    doc.addEventListener('mousemove', this.handleTouchMove)
+    doc.addEventListener('mouseup', this.handleTouchEnd)
   }
 
   private trackFinger(event: TouchEvent | MouseEvent) {
@@ -172,7 +280,8 @@ export class ThumbDOM {
     // TouchEvent
     if (touchId !== null && (event as TouchEvent).changedTouches) {
       const touchEvent = event as TouchEvent
-      for (let i = 0; i < touchEvent.changedTouches.length; i += 1) {
+
+      for (let i = 0; i < touchEvent.changedTouches.length; i++) {
         const touch = touchEvent.changedTouches[i]
         if (touch.identifier === touchId) {
           return {
@@ -191,153 +300,17 @@ export class ThumbDOM {
       y: (event as MouseEvent).clientY
     }
   }
-
-  private offsetPosition({ x, y }: PartialPosition) {
-    const { offset } = this
-
-    if (offset) {
-      if (x !== undefined && offset.x !== undefined) {
-        x -= offset.x
-      }
-      if (y !== undefined && offset.y !== undefined) {
-        y -= offset.y
-      }
-    }
-
-    return {
-      x,
-      y
-    }
-  }
-
-  private handleTouchStart(event: TouchEvent) {
-    if (this.disabled) {
-      return
-    }
-
-    const touch = event.changedTouches[0]
-    if (touch) {
-      this.touchId = touch.identifier
-    }
-
-    const finger = this.trackFinger(event)!
-
-    const environment = this.options.createDraggingContext?.(finger, this.thumbElement!, event)
-    if (environment) {
-      if (environment.disabled) {
-        return
-      }
-
-      if (environment.offset) {
-        this.offset = environment.offset
-      }
-    }
-
-    this.options.onDragStart?.(finger, event)
-
-    const actualPosition = this.offsetPosition(finger)
-    const newPosition = this.thumb.move(actualPosition)
-
-    if (newPosition) {
-      this.handleChange(newPosition)
-    }
-
-    const doc = ownerDocument(this.thumbElement)
-    doc.addEventListener('touchmove', this.handleTouchMove)
-    doc.addEventListener('touchend', this.handleTouchEnd)
-  }
-
-  private handleTouchMove(event: TouchEvent | MouseEvent) {
-    const finger = this.trackFinger(event)
-    if (!finger) {
-      return
-    }
-
-    this.options.onDragging?.(finger, event)
-
-    const actualPosition = this.offsetPosition(finger)
-    const newPosition = this.thumb.move(actualPosition)
-
-    if (newPosition) {
-      this.handleChange(newPosition)
-    }
-  }
-
-  private handleTouchEnd(event: TouchEvent | MouseEvent) {
-    const finger = this.trackFinger(event)
-    if (!finger) {
-      return
-    }
-
-    this.options.onDragEnd?.(finger, event)
-
-    const actualPosition = this.offsetPosition(finger)
-    const newPosition = this.thumb.move(actualPosition)
-
-    this.touchId = null
-
-    if (newPosition) {
-      this.handleChange(newPosition)
-    }
-
-    this.stopDragListening()
-    this.thumb.terminateMove()
-  }
-
-  private handleMouseDown(event: MouseEvent) {
-    if (this.disabled) {
-      return
-    }
-
-    if (event.defaultPrevented) {
-      return
-    }
-
-    const { options } = this
-    if (!isAllowedButtonType(event, options.buttons)) {
-      return
-    }
-
-    // Avoid text selection
-    event.preventDefault()
-
-    const finger = this.trackFinger(event)!
-    const context = this.options.createDraggingContext?.(finger, this.thumbElement!, event)
-
-    if (context) {
-      if (context.disabled) {
-        return
-      }
-
-      if (context.offset) {
-        this.offset = context.offset
-      }
-    }
-
-    options.onDragStart?.(finger, event)
-
-    const actualPosition = this.offsetPosition(finger)
-    const newPosition = this.thumb.move(actualPosition)
-
-    if (newPosition) {
-      this.handleChange(newPosition)
-    }
-
-    const doc = ownerDocument(this.thumbElement)
-    doc.addEventListener('mousemove', this.handleTouchMove)
-    doc.addEventListener('mouseup', this.handleTouchEnd)
-  }
 }
 
 export function createThumbDOM(
   element?: HTMLElement | null,
-  position?: PartialPosition | null,
+  coords?: PartialCoords | null,
   options?: ThumbDOMOptions
 ) {
   const thumbDOM = new ThumbDOM(element, options)
 
-  if (position) {
-    thumbDOM.setPosition(position, true)
+  if (coords) {
+    thumbDOM.setCoords(coords, true)
   }
 
   return thumbDOM

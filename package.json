@@ -1,4 +1,5 @@
 {
+  "name": "@thumb-fantasy/monorepo",
   "author": "nooooooom <https://github.com/nooooooom>",
   "description": "The most basic implementation of all dragging scenarios",
   "private": true,

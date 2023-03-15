@@ -1,35 +1,44 @@
-import { createThumbDOM } from '../src'
+import {
+  axis,
+  compose,
+  createThumbDOM,
+  limit,
+  offset as offsetMiddleware,
+  PartialCoords
+} from '../src'
 
 const thumb = document.getElementById('thumb')!
 
+let offset: PartialCoords | null = null
+
 const thumbDOM = createThumbDOM(thumb, null, {
-  direction: 'omnidirectional',
+  middleware: compose(
+    offsetMiddleware(() => offset),
+    limit(() => {
+      return {
+        min: { x: 0, y: 0 },
+        max: { x: window.innerWidth - 100, y: window.innerHeight - 100 }
+      }
+    }),
+    axis('x')
+  ),
 
-  min: {
-    x: 0,
-    y: 0
-  },
-
-  onDragStart() {
+  onDragStart(coords) {
     thumb.classList.add('dragging')
+
+    const { top, left } = thumb.getBoundingClientRect()
+    offset = {
+      x: coords.x - left,
+      y: coords.y - top
+    }
   },
 
   onDragEnd() {
     thumb.classList.remove('dragging')
   },
 
-  createDraggingContext(finger) {
-    const { top, left } = thumb.getBoundingClientRect()
-    return {
-      offset: {
-        x: finger.x - left,
-        y: finger.y - top
-      }
-    }
-  },
-
-  onPositionChange(position) {
-    thumb.style.top = `${position.y}px`
-    thumb.style.left = `${position.x}px`
+  onChange(coords) {
+    thumb.style.top = `${coords.y}px`
+    thumb.style.left = `${coords.x}px`
   }
 })

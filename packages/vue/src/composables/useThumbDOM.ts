@@ -1,39 +1,41 @@
 import {
+  Axis,
+  axis as axisMiddleware,
+  compose,
+  Coords,
+  CoordsLimit,
   createThumbDOM,
-  Direction,
-  DraggingContextCreator,
-  Position,
-  PositionLimits,
-  ThumbDOM
+  isEqualCoords,
+  limit as limitMiddleware,
+  Middleware,
+  ThumbDOM,
+  ThumbDOMOptions
 } from '@thumb-fantasy/base'
-import { ExtractPropTypes, getCurrentInstance, onBeforeUnmount, Ref, ref, unref } from 'vue'
-import { definePropType, MaybeRef } from 'vue-lib-toolkit'
+import { ExtractPropTypes, getCurrentInstance, onBeforeUnmount, Ref, ref, unref, watch } from 'vue'
+import { definePropType, MaybeRef, withDefaultProps } from 'vue-lib-toolkit'
 import { useEffect } from 'vue-reactivity-fantasy'
 
-export type DraggingCallback = (
-  position: Position,
-  element: HTMLElement,
-  event: TouchEvent | MouseEvent
-) => void
-
-export const UseThumbDOMProps = {
+const UseThumbDOMPropsType = {
   disabled: Boolean,
-  direction: definePropType<Direction>(String),
+  axis: definePropType<Axis>(String),
   buttons: definePropType<number[]>(Array),
-  min: definePropType<number | PositionLimits>([Number, Object]),
-  max: definePropType<number | PositionLimits>([Number, Object]),
-  createDraggingContext: definePropType<DraggingContextCreator>(Function),
-  onDragStart: definePropType<DraggingCallback>(),
-  onDragging: definePropType<DraggingCallback>(),
-  onDragEnd: definePropType<DraggingCallback>()
+  min: definePropType<number | CoordsLimit>([Number, Object]),
+  max: definePropType<number | CoordsLimit>([Number, Object]),
+  middleware: definePropType<ThumbDOMOptions['middleware']>(Function),
+  onDragStart: definePropType<ThumbDOMOptions['onDragStart']>(),
+  onDragging: definePropType<ThumbDOMOptions['onDragging']>(),
+  onDragEnd: definePropType<ThumbDOMOptions['onDragEnd']>()
 }
+
+export const UseThumbDOMProps = withDefaultProps(UseThumbDOMPropsType, {
+  axis: 'x'
+})
 
 export type UseThumbDOMProps = ExtractPropTypes<typeof UseThumbDOMProps>
 
-export interface UseThumbDOMReturn extends Pick<ThumbDOM, 'setPosition'> {
-  position: Ref<Position>
+export interface UseThumbDOMReturn extends Pick<ThumbDOM, 'setCoords'> {
+  coords: Ref<Coords>
   dragging: Ref<boolean>
-  dragDistance: Ref<Position | undefined>
 }
 
 export function useThumbDOM(
@@ -41,56 +43,33 @@ export function useThumbDOM(
   props: UseThumbDOMProps
 ): UseThumbDOMReturn {
   const thumbDOM = createThumbDOM(null, null, {
-    onPositionChange(finger) {
-      position.value = finger
-      dragDistance.value = thumbDOM.getDragDistance()
+    onChange(nextCoords) {
+      if (!isEqualCoords(coords.value, nextCoords)) {
+        coords.value = nextCoords
+      }
     },
-    onDragStart(finger, event) {
+    onDragStart(...args) {
       dragging.value = true
-      props?.onDragStart?.(finger, thumbDOM.getThumbElement()!, event)
+      return props?.onDragStart?.(...args)
     },
-    onDragging(finger, event) {
-      props?.onDragging?.(finger, thumbDOM.getThumbElement()!, event)
+    onDragging(...args) {
+      props?.onDragging?.(...args)
     },
-    onDragEnd(finger, event) {
+    onDragEnd(...args) {
       dragging.value = false
-      props?.onDragEnd?.(finger, thumbDOM.getThumbElement()!, event)
+      props?.onDragEnd?.(...args)
     }
   })
 
-  const position = ref<Position>(thumbDOM.getPosition())
-  const dragging = ref(false)
-  const dragDistance = ref<Position>()
-
-  useEffect(
-    (onCleanup, element) => {
-      thumbDOM.registerThumbElement(element)
-      onCleanup(() => thumbDOM.unregisterThumbElement())
-    },
+  watch(
     () => unref(element),
-    {
-      immediate: true
-    }
-  )
-
-  useEffect(
-    () => {
-      thumbDOM.setDisabled(props.disabled)
+    (element) => {
+      thumbDOM.registerThumbElement(element)
     },
-    () => props.disabled,
     {
       immediate: true
     }
   )
-
-  useEffect(() => {
-    thumbDOM.setOptions({
-      direction: props.direction || 'horizontal',
-      min: props.min,
-      max: props.max,
-      createDraggingContext: props.createDraggingContext
-    })
-  })
 
   if (getCurrentInstance()) {
     onBeforeUnmount(() => {
@@ -98,10 +77,27 @@ export function useThumbDOM(
     })
   }
 
+  const coords = ref<Coords>(thumbDOM.getCoords())
+  const dragging = ref(false)
+
+  const middleware = compose(
+    axisMiddleware(() => props.axis),
+    limitMiddleware(() => ({
+      min: props.min,
+      max: props.max
+    }))
+  )
+
+  useEffect(() => {
+    thumbDOM.setOptions({
+      disabled: props.disabled,
+      middleware: compose(...([props.middleware, middleware].filter(Boolean) as Middleware[]))
+    })
+  })
+
   return {
-    position,
+    coords,
     dragging,
-    dragDistance,
-    setPosition: (position) => thumbDOM.setPosition(position)
+    setCoords: (coords) => thumbDOM.setCoords(coords)
   }
 }

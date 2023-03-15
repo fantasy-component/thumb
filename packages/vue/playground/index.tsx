@@ -1,5 +1,5 @@
 import { createApp, defineComponent, ref } from 'vue'
-import { DraggingContextCreator, Position, Thumb } from '../src'
+import { Coords, Thumb, DraggingCallback, PartialCoords, offset as offsetMiddleware } from '../src'
 import { ThumbContext } from '../src/ThumbContext'
 
 const Round = defineComponent({
@@ -9,13 +9,13 @@ const Round = defineComponent({
     return (
       <ThumbContext.Consumer>
         {{
-          default: (thumbContext) => (
+          default: (thumbContextValue) => (
             <div
               id='thumb'
-              class={thumbContext?.dragging ? 'dragging' : ''}
+              class={thumbContextValue?.dragging ? 'dragging' : ''}
               style={{
-                top: `${thumbContext?.position?.y || 0}px`,
-                left: `${thumbContext?.position?.x || 0}px`
+                top: `${thumbContextValue?.y || 0}px`,
+                left: `${thumbContextValue?.x || 0}px`
               }}
             ></div>
           )
@@ -29,16 +29,17 @@ const App = defineComponent({
   name: 'App',
 
   setup() {
-    const position = ref<Position>()
+    const coords = ref<Coords>()
+    const offset = ref<PartialCoords>()
     const type = ref('props')
 
-    const createDraggingContext: DraggingContextCreator = (position, element) => {
+    const middleware = offsetMiddleware(() => offset.value)
+
+    const handleDragStart: DraggingCallback = (coords, element) => {
       const { top, left } = element.getBoundingClientRect()
-      return {
-        offset: {
-          x: position.x - left,
-          y: position.y - top
-        }
+      offset.value = {
+        x: coords.x - left,
+        y: coords.y - top
       }
     }
 
@@ -70,12 +71,13 @@ const App = defineComponent({
           </div>
 
           <Thumb
-            position={position.value}
-            defaultPosition={{
+            coords={coords.value}
+            defaultCoords={{
               x: 200
             }}
-            createDraggingContext={createDraggingContext}
-            onChange={(newPosition) => (position.value = newPosition)}
+            middleware={middleware}
+            onDragStart={handleDragStart}
+            onChange={(newCoords) => (coords.value = newCoords)}
           >
             {{
               default: () =>
@@ -83,8 +85,8 @@ const App = defineComponent({
                   <div
                     id='thumb'
                     style={{
-                      top: `${position.value?.y || 0}px`,
-                      left: `${position.value?.x || 0}px`
+                      top: `${coords.value?.y || 0}px`,
+                      left: `${coords.value?.x || 0}px`
                     }}
                   />
                 ) : (

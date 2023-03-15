@@ -1,31 +1,29 @@
+import { computed, defineComponent, ExtractPropTypes, h, PropType, ref, watch } from 'vue'
 import {
-  computed,
-  defineComponent,
-  ExtractPropTypes,
-  getCurrentInstance,
-  h,
-  PropType,
-  reactive,
-  ref,
-  watch,
-  watchEffect
-} from 'vue'
-import { isVue2, useFirstQualifiedElement } from 'vue-lib-toolkit'
+  definePropType,
+  isVue2,
+  useFirstQualifiedElement,
+  useLeadingProps,
+  withDefaultProps
+} from 'vue-lib-toolkit'
 import { useMergedState } from 'vue-reactivity-fantasy'
-import { Position, PositionChangeCallback } from '@thumb-fantasy/base'
+import { ChangeCallback, Coords, isEqualCoords } from '@thumb-fantasy/base'
 import { useThumbDOM, UseThumbDOMProps } from './composables/useThumbDOM'
-import { ThumbContext } from './ThumbContext'
+import { ThumbContext, ThumbContextValue } from './ThumbContext'
 import { DraggingData } from './interface'
 
-export type ChangeCallback = (position: Position, dragDistance?: Position) => void
-
-const ThumbProps = {
+const ThumbPropsType = {
   ...UseThumbDOMProps,
-  position: Object as PropType<Position>,
-  defaultPosition: Object as PropType<Position>,
+  coords: definePropType<Coords>(Object),
+  defaultCoords: definePropType<Coords>(Object),
+  autoRef: Boolean,
   onChange: Function as PropType<ChangeCallback>,
-  'onUpdate:position': Function as PropType<PositionChangeCallback>
+  'onUpdate:coords': Function as PropType<ChangeCallback>
 } as const
+
+export const ThumbProps = withDefaultProps(ThumbPropsType, {
+  autoRef: true
+})
 
 export type ThumbProps = ExtractPropTypes<typeof ThumbProps>
 
@@ -42,65 +40,71 @@ export const Thumb = defineComponent({
   props: ThumbProps,
 
   setup(props, { slots, emit, expose }) {
-    const thumbElement = useFirstQualifiedElement<HTMLElement>((element) => {
+    const thumbElement = ref<HTMLElement | null | undefined>()
+
+    const autoThumbElement = useFirstQualifiedElement<HTMLElement>((element) => {
       return element?.nodeType === 1
     })
 
-    let thumbDOMProps: UseThumbDOMProps = props
-
-    if (isVue2) {
-      // Vue2 can't extract event callback function from props
-      thumbDOMProps = reactive<UseThumbDOMProps>({
-        ...props,
-        onDragStart: (event, position) => {
-          emit('drag-start', event, position)
-        },
-        onDragging: (event, position) => {
-          emit('drag-start', event, position)
-        },
-        onDragEnd: (event, position) => {
-          emit('drag-start', event, position)
+    watch(
+      [() => props.autoRef, autoThumbElement],
+      ([autoRef, autoThumbElement]) => {
+        if (autoRef) {
+          thumbElement.value = autoThumbElement
         }
-      })
-
-      watchEffect(() => {
-        Object.assign(thumbDOMProps, props)
-      })
-    }
-
-    const { position, dragging, dragDistance, setPosition } = useThumbDOM(
-      thumbElement,
-      thumbDOMProps
+      },
+      {
+        immediate: true
+      }
     )
 
-    const draggingData = computed(() => {
+    const { coords, dragging, setCoords } = useThumbDOM(
+      thumbElement,
+      useLeadingProps(props, { emit }) as UseThumbDOMProps
+    )
+
+    const draggingData = computed<DraggingData>(() => {
       return {
-        position: position.value,
-        dragging: dragging.value,
-        dragDistance: dragDistance.value
+        ...coords.value,
+        dragging: dragging.value
       }
     })
 
-    const mergedPosition = useMergedState(
-      () => props.position,
-      () => props.defaultPosition
+    const thumbContextValue = computed<ThumbContextValue>(() => {
+      return {
+        ...draggingData.value,
+        setThumbElement: (element) => {
+          if (!props.autoRef) {
+            thumbElement.value = element
+          }
+        }
+      }
+    })
+
+    const mergedCoords = useMergedState(
+      () => props.coords,
+      () => props.defaultCoords
     )
 
     watch(
-      mergedPosition,
-      (position) => {
-        if (position) {
-          setPosition(position)
+      mergedCoords,
+      (mergedCoords) => {
+        if (mergedCoords && !isEqualCoords(mergedCoords, coords.value)) {
+          setCoords(mergedCoords)
         }
       },
-      { immediate: true }
+      {
+        immediate: true
+      }
     )
 
     watch(
-      position,
-      (position) => {
-        emit('change', position, dragDistance.value)
-        emit('update:position', position)
+      coords,
+      (coords) => {
+        if (!isEqualCoords(coords, props.coords)) {
+          emit('change', coords)
+          emit('update:coords', coords)
+        }
       },
       {
         immediate: true
@@ -125,7 +129,7 @@ export const Thumb = defineComponent({
       return h(
         ThumbContext.Provider,
         {
-          value: draggingData.value
+          value: thumbContextValue.value
         },
         isVue2
           ? child

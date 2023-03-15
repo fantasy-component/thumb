@@ -1,9 +1,9 @@
-import { DraggingContextCreator, Position, Thumb } from '../src'
+import { Coords, Thumb, DraggingCallback, PartialCoords, offset as offsetMiddleware } from '../src'
 import { createRoot } from 'react-dom/client'
-import { forwardRef, Fragment, useCallback, useState } from 'react'
+import React from 'react'
 import { ThumbContext } from '../src/ThumbContext'
 
-const Round = forwardRef<any>((props, ref) => {
+const Round = React.forwardRef<any>((props, ref) => {
   return (
     <ThumbContext.Consumer>
       {(draggingData) => (
@@ -12,8 +12,8 @@ const Round = forwardRef<any>((props, ref) => {
           id='thumb'
           className={draggingData?.dragging ? 'dragging' : ''}
           style={{
-            top: `${draggingData?.position?.y || 0}px`,
-            left: `${draggingData?.position?.x || 0}px`
+            top: `${draggingData?.y || 0}px`,
+            left: `${draggingData?.x || 0}px`
           }}
         />
       )}
@@ -22,21 +22,26 @@ const Round = forwardRef<any>((props, ref) => {
 })
 
 function App() {
-  const [position, setPosition] = useState<Position>()
-  const [type, setType] = useState<string>('props')
+  const [coords, setCoords] = React.useState<Coords>()
+  const [type, setType] = React.useState<string>('props')
+  const offsetRef = React.useRef<PartialCoords>()
 
-  const createDraggingContext: DraggingContextCreator = useCallback((position, element) => {
+  const [middleware] = React.useState(() => offsetMiddleware(() => offsetRef.current))
+
+  const onDragStart = React.useCallback<DraggingCallback>((coords, element) => {
     const { top, left } = element.getBoundingClientRect()
-    return {
-      offset: {
-        x: position.x - left,
-        y: position.y - top
-      }
+    offsetRef.current = {
+      x: coords.x - left,
+      y: coords.y - top
     }
   }, [])
 
+  const onDragEnd = React.useCallback<DraggingCallback>(() => {
+    offsetRef.current = undefined
+  }, [])
+
   return (
-    <Fragment>
+    <React.Fragment>
       <div>
         <label>
           <input
@@ -62,26 +67,28 @@ function App() {
       </div>
 
       <Thumb
-        position={position}
-        defaultPosition={{
+        coords={coords}
+        defaultCoords={{
           x: 200
         }}
-        createDraggingContext={createDraggingContext}
-        onChange={(newPosition) => setPosition(newPosition)}
+        middleware={middleware}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        onChange={(newCoords) => setCoords(newCoords)}
       >
         {type === 'props' ? (
           <div
             id='thumb'
             style={{
-              top: `${position?.y || 0}px`,
-              left: `${position?.x || 0}px`
+              top: `${coords?.y || 0}px`,
+              left: `${coords?.x || 0}px`
             }}
           />
         ) : (
           <Round />
         )}
       </Thumb>
-    </Fragment>
+    </React.Fragment>
   )
 }
 

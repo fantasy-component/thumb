@@ -1,7 +1,5 @@
-import { Position } from '@thumb-fantasy/base'
+import { Coords } from '@thumb-fantasy/base'
 
-export interface DraggingData {
-  position: Position
+export interface DraggingData extends Coords {
   dragging: boolean
-  dragDistance: Position | undefined
 }

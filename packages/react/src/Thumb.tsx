@@ -1,59 +1,80 @@
-import { PartialPosition, Position } from '@thumb-fantasy/base'
-import { cloneElement, isValidElement, ReactNode, useEffect, useMemo, useState } from 'react'
+import { ChangeCallback, isEqualCoords, PartialCoords } from '@thumb-fantasy/base'
+import React, { useCallback } from 'react'
 import { useThumbDOM, UseThumbDOMProps } from './hooks/useThumbDOM'
-import { DraggingData } from './interface'
-import { ThumbContext } from './ThumbContext'
-
-export type ChangeCallback = (position: Position, dragDistance?: Position) => void
+import { ThumbContext, ThumbContextValue } from './ThumbContext'
 
 export interface ThumbProps extends UseThumbDOMProps {
-  position?: PartialPosition
-  defaultPosition?: PartialPosition
+  coords?: PartialCoords
+  defaultCoords?: PartialCoords
+  autoRef?: boolean
   onChange?: ChangeCallback
 }
 
 export const Thumb = (
   props: ThumbProps & {
-    children?: ReactNode
+    children?: React.ReactNode
   }
 ) => {
   const {
-    position: userPosition,
-    defaultPosition: userDefaultPosition,
-    onChange,
+    coords: userCoords,
+    defaultCoords: userDefaultCoords,
+    autoRef = true,
     children,
+    onChange,
     ...useThumbDOMProps
   } = props
 
-  const { thumb, position, setPosition, dragging, dragDistance } = useThumbDOM(useThumbDOMProps)
+  const { setThumbElement, coords, setCoords, dragging } = useThumbDOM(useThumbDOMProps)
+  const coordsRef = React.useRef(coords)
 
-  const [mergedPosition] = useState(userPosition !== undefined ? userPosition : userDefaultPosition)
+  const [mergedCoords, setMergedCoords] = React.useState<PartialCoords>()
 
-  useEffect(() => {
-    if (mergedPosition) {
-      setPosition(mergedPosition)
+  React.useEffect(() => {
+    const nextMergedCoords = userCoords === undefined ? userCoords : userDefaultCoords
+    if (!isEqualCoords(mergedCoords, nextMergedCoords)) {
+      setMergedCoords(nextMergedCoords)
     }
-  }, [mergedPosition])
+  }, [userCoords])
 
-  useEffect(() => {
-    onChange?.(position, dragDistance)
-  }, [position])
+  React.useEffect(() => {
+    if (mergedCoords && !isEqualCoords(coordsRef.current, mergedCoords)) {
+      setCoords(mergedCoords)
+    }
+  }, [mergedCoords])
 
-  const draggingData = useMemo<DraggingData>(
+  React.useEffect(() => {
+    coordsRef.current = coords
+    if (!isEqualCoords(userCoords, coords)) {
+      onChange?.(coords)
+    }
+  }, [coords])
+
+  const publicSetThumbElement = useCallback<typeof setThumbElement>(
+    (element) => {
+      if (!autoRef) {
+        setThumbElement(element)
+      }
+    },
+    [autoRef, setThumbElement]
+  )
+
+  const thumbContextValue = React.useMemo<ThumbContextValue>(
     () => ({
-      position,
+      ...coords,
       dragging,
-      dragDistance
+      setThumbElement: publicSetThumbElement
     }),
-    [position, dragging, dragDistance]
+    [coords, dragging, publicSetThumbElement]
   )
 
   return (
-    <ThumbContext.Provider value={draggingData}>
-      {isValidElement(children) &&
-        cloneElement<any>(children, {
-          ref: thumb
-        })}
+    <ThumbContext.Provider value={thumbContextValue}>
+      {React.isValidElement(children) &&
+        (autoRef
+          ? React.cloneElement<any>(children, {
+              ref: setThumbElement
+            })
+          : children)}
     </ThumbContext.Provider>
   )
 }

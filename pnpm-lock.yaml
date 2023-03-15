@@ -21,10 +21,7 @@ importers:
       vite: 4.1.4
 
   packages/base:
-    specifiers:
-      tsup: ^6.6.3
-    devDependencies:
-      tsup: 6.6.3
+    specifiers: {}
 
   packages/react:
     specifiers:
@@ -41,11 +38,11 @@ importers:
     specifiers:
       '@thumb-fantasy/base': workspace:*
       vue: ^3.2.47
-      vue-lib-toolkit: ^0.0.5
+      vue-lib-toolkit: ^0.0.6
       vue-reactivity-fantasy: ^0.0.7
     dependencies:
       '@thumb-fantasy/base': link:../base
-      vue-lib-toolkit: 0.0.5_vue@3.2.47
+      vue-lib-toolkit: 0.0.6_vue@3.2.47
       vue-reactivity-fantasy: 0.0.7_vue@3.2.47
     devDependencies:
       vue: 3.2.47
@@ -1799,41 +1796,6 @@ packages:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
     dev: true
 
-  /tsup/6.6.3:
-    resolution: {integrity: sha512-OLx/jFllYlVeZQ7sCHBuRVEQBBa1tFbouoc/gbYakyipjVQdWy/iQOvmExUA/ewap9iQ7tbJf9pW0PgcEFfJcQ==}
-    engines: {node: '>=14.18'}
-    hasBin: true
-    peerDependencies:
-      '@swc/core': ^1
-      postcss: ^8.4.12
-      typescript: ^4.1.0
-    peerDependenciesMeta:
-      '@swc/core':
-        optional: true
-      postcss:
-        optional: true
-      typescript:
-        optional: true
-    dependencies:
-      bundle-require: 4.0.1_esbuild@0.17.11
-      cac: 6.7.14
-      chokidar: 3.5.3
-      debug: 4.3.4
-      esbuild: 0.17.11
-      execa: 5.1.1
-      globby: 11.1.0
-      joycon: 3.1.1
-      postcss-load-config: 3.1.4
-      resolve-from: 5.0.0
-      rollup: 3.18.0
-      source-map: 0.8.0-beta.0
-      sucrase: 3.29.0
-      tree-kill: 1.2.2
-    transitivePeerDependencies:
-      - supports-color
-      - ts-node
-    dev: true
-
   /tsup/6.6.3_typescript@4.9.5:
     resolution: {integrity: sha512-OLx/jFllYlVeZQ7sCHBuRVEQBBa1tFbouoc/gbYakyipjVQdWy/iQOvmExUA/ewap9iQ7tbJf9pW0PgcEFfJcQ==}
     engines: {node: '>=14.18'}
@@ -1940,8 +1902,8 @@ packages:
       vue: 3.2.47
     dev: false
 
-  /vue-lib-toolkit/0.0.5_vue@3.2.47:
-    resolution: {integrity: sha512-9HOv5xq8coo5eD+U1PLrSR7sIDR8MlRjzTO7Q1Dqr6yQUQ+Wa+2UlqEX/yM5cLda0gM3XKzHwCyTU6X9nYG02Q==}
+  /vue-lib-toolkit/0.0.6_vue@3.2.47:
+    resolution: {integrity: sha512-GMAYVR9e7ei89HCISpVfaXvdTf0iBkvEuL3VtlSk35IpwqmM1s0kSvMaPrZ+x/IOfvF8U77cPI6xHcT/2S8UUA==}
     peerDependencies:
       typescript: '>=4.4.4'
       vue: '>=2.7.0 || ^3.2.0'

@@ -25,11 +25,11 @@
   "scripts": {
     "build": "tsup",
     "play": "cd ./playground & vite",
-    "prepublish": "pnpm -r run build"
+    "prepublish": "pnpm run build"
   },
   "dependencies": {
     "@thumb-fantasy/base": "workspace:*",
-    "vue-lib-toolkit": "^0.0.5",
+    "vue-lib-toolkit": "^0.0.6",
     "vue-reactivity-fantasy": "^0.0.7"
   },
   "devDependencies": {
