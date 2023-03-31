@@ -1,5 +1,5 @@
 {
-  "name": "@thumb-fantasy/base",
+  "name": "@fantasy-thumb/base",
   "version": "0.0.5",
   "author": "nooooooom <https://github.com/nooooooom>",
   "description": "The most basic implementation of all dragging scenarios",
@@ -15,11 +15,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/fantasy-component/thumb-fantasy.git",
+    "url": "git+https://github.com/fantasy-component/fantasy-thumb.git",
     "directory": "packages/base"
   },
   "bugs": {
-    "url": "https://github.com/fantasy-component/thumb-fantasy/issues"
+    "url": "https://github.com/fantasy-component/fantasy-thumb/issues"
   },
   "sideEffects": false,
   "scripts": {

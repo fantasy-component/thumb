@@ -25,23 +25,23 @@ importers:
 
   packages/react:
     specifiers:
-      '@thumb-fantasy/base': workspace:*
+      '@fantasy-thumb/base': workspace:*
       '@types/react': ^18.0.28
       react: ^18.2.0
     dependencies:
-      '@thumb-fantasy/base': link:../base
+      '@fantasy-thumb/base': link:../base
     devDependencies:
       '@types/react': 18.0.28
       react: 18.2.0
 
   packages/vue:
     specifiers:
-      '@thumb-fantasy/base': workspace:*
+      '@fantasy-thumb/base': workspace:*
       vue: ^3.2.47
       vue-lib-toolkit: ^0.0.6
       vue-reactivity-fantasy: ^0.0.7
     dependencies:
-      '@thumb-fantasy/base': link:../base
+      '@fantasy-thumb/base': link:../base
       vue-lib-toolkit: 0.0.6_vue@3.2.47
       vue-reactivity-fantasy: 0.0.7_vue@3.2.47
     devDependencies:

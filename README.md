@@ -1,4 +1,4 @@
-# @thumb-fantasy
+# @fantasy-thumb
 
 The most basic implementation of all dragging scenarios.
 

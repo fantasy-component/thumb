@@ -7,7 +7,7 @@ import {
   withDefaultProps
 } from 'vue-lib-toolkit'
 import { useMergedState } from 'vue-reactivity-fantasy'
-import { ChangeCallback, Coords, isEqualCoords } from '@thumb-fantasy/base'
+import { ChangeCallback, Coords, isEqualCoords } from '@fantasy-thumb/base'
 import { useThumbDOM, UseThumbDOMProps } from './composables/useThumbDOM'
 import { ThumbContext, ThumbContextValue } from './ThumbContext'
 import { DraggingData } from './interface'

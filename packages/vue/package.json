@@ -1,5 +1,5 @@
 {
-  "name": "@thumb-fantasy/vue",
+  "name": "@fantasy-thumb/vue",
   "version": "0.0.5",
   "author": "nooooooom <https://github.com/nooooooom>",
   "description": "Thumb base for Vue",
@@ -15,11 +15,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/fantasy-component/thumb-fantasy.git",
+    "url": "git+https://github.com/fantasy-component/fantasy-thumb.git",
     "directory": "packages/vue"
   },
   "bugs": {
-    "url": "https://github.com/fantasy-component/thumb-fantasy/issues"
+    "url": "https://github.com/fantasy-component/fantasy-thumb/issues"
   },
   "sideEffects": false,
   "scripts": {
@@ -28,7 +28,7 @@
     "prepublish": "pnpm run build"
   },
   "dependencies": {
-    "@thumb-fantasy/base": "workspace:*",
+    "@fantasy-thumb/base": "workspace:*",
     "vue-lib-toolkit": "^0.0.6",
     "vue-reactivity-fantasy": "^0.0.7"
   },

@@ -10,7 +10,7 @@ import {
   Middleware,
   ThumbDOM,
   ThumbDOMOptions
-} from '@thumb-fantasy/base'
+} from '@fantasy-thumb/base'
 import { ExtractPropTypes, getCurrentInstance, onBeforeUnmount, Ref, ref, unref, watch } from 'vue'
 import { definePropType, MaybeRef, withDefaultProps } from 'vue-lib-toolkit'
 import { useEffect } from 'vue-reactivity-fantasy'

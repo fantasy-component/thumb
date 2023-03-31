@@ -1,3 +1,3 @@
-# @thumb-fantasy/react
+# @fantasy-thumb/react
 
 The most basic implementation of all dragging scenarios.

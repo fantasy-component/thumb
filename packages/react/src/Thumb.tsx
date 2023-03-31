@@ -1,4 +1,4 @@
-import { ChangeCallback, isEqualCoords, PartialCoords } from '@thumb-fantasy/base'
+import { ChangeCallback, isEqualCoords, PartialCoords } from '@fantasy-thumb/base'
 import React, { useCallback } from 'react'
 import { useThumbDOM, UseThumbDOMProps } from './hooks/useThumbDOM'
 import { ThumbContext, ThumbContextValue } from './ThumbContext'

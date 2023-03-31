@@ -10,7 +10,7 @@ import {
   Middleware,
   ThumbDOM,
   ThumbDOMOptions
-} from '@thumb-fantasy/base'
+} from '@fantasy-thumb/base'
 import { MutableRefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 export interface UseThumbDOMProps extends Omit<ThumbDOMOptions, 'onChange'> {

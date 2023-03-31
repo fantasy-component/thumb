@@ -1,14 +1,14 @@
 {
-  "name": "@thumb-fantasy/monorepo",
+  "name": "@fantasy-thumb/monorepo",
   "author": "nooooooom <https://github.com/nooooooom>",
   "description": "The most basic implementation of all dragging scenarios",
   "private": true,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/fantasy-component/thumb-fantasy.git"
+    "url": "git+https://github.com/fantasy-component/fantasy-thumb.git"
   },
   "bugs": {
-    "url": "https://github.com/fantasy-component/thumb-fantasy/issues"
+    "url": "https://github.com/fantasy-component/fantasy-thumb/issues"
   },
   "scripts": {
     "release": "bumpp packages/*/package.json --commit --push --tag && pnpm -r publish --access public"

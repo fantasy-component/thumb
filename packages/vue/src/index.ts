@@ -10,7 +10,7 @@ export {
   limit,
   offset,
   offsetDOM
-} from '@thumb-fantasy/base'
+} from '@fantasy-thumb/base'
 export type {
   Axis,
   ChangeCallback,
@@ -24,4 +24,4 @@ export type {
   PartialCoordsPayload,
   ThumbDOMPayload,
   ThumbPayload
-} from '@thumb-fantasy/base'
+} from '@fantasy-thumb/base'
