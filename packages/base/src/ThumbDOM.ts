@@ -2,6 +2,29 @@ import { ChangeCallback, createThumb, Thumb, ThumbOptions, ThumbPayload } from '
 import { Coords, Middleware, PartialCoords } from './types'
 import { compose } from './utils/compose'
 
+export const DOMCoordsChangeType = {
+  MANUAL: 'manual',
+  DRAG_START: 'drag-start',
+  DRAGGING: 'dragging',
+  DRAG_END: 'drag-end'
+} as const
+export type DOMCoordsChangeType = typeof DOMCoordsChangeType[keyof typeof DOMCoordsChangeType]
+
+interface ManualPayload {
+  readonly type: 'manual'
+  readonly element?: HTMLElement
+}
+
+interface DragPayload {
+  readonly type: Exclude<DOMCoordsChangeType, ManualPayload['type']>
+  readonly element: HTMLElement
+  readonly event: TouchEvent | MouseEvent
+}
+
+export interface ThumbDOMPayload extends ThumbPayload {
+  dom: ManualPayload | DragPayload
+}
+
 export const BUTTONS = {
   LEFT: 0,
   MIDDLE: 1,
@@ -14,23 +37,6 @@ function ownerDocument(node: Node | null | undefined): Document {
 
 function isAllowedButtonType(event: MouseEvent, buttons: number[]) {
   return buttons.includes(event.button)
-}
-
-export type DOMCoordsChangeType = 'manual' | 'drag-start' | 'dragging' | 'drag-end'
-
-interface ManualPayload {
-  readonly type: 'manual'
-  readonly element?: HTMLElement
-}
-
-interface DragPayload {
-  readonly type: Omit<DOMCoordsChangeType, ManualPayload['type']>
-  readonly element: HTMLElement
-  readonly event: TouchEvent | MouseEvent
-}
-
-export interface ThumbDOMPayload extends ThumbPayload {
-  dom: ManualPayload | DragPayload
 }
 
 export type DraggingCallback<T = void> = (
@@ -159,7 +165,7 @@ export class ThumbDOM {
   }
 
   setCoords(coords: PartialCoords, quiet?: boolean) {
-    this.setPayload('manual')
+    this.setPayload(DOMCoordsChangeType.MANUAL)
     return this.thumb.setCoords(coords, quiet)
   }
 
@@ -212,7 +218,7 @@ export class ThumbDOM {
       return
     }
 
-    this.setPayload('drag-start', event)
+    this.setPayload(DOMCoordsChangeType.DRAG_START, event)
     this.thumb.setCoords(finger)
 
     const doc = ownerDocument(this.thumbElement)
@@ -228,7 +234,7 @@ export class ThumbDOM {
 
     this.options.onDragging?.(finger, this.thumbElement!, event)
 
-    this.setPayload('dragging', event)
+    this.setPayload(DOMCoordsChangeType.DRAGGING, event)
     this.thumb.setCoords(finger)
   }
 
@@ -238,7 +244,7 @@ export class ThumbDOM {
       return
     }
 
-    this.setPayload('drag-end', event)
+    this.setPayload(DOMCoordsChangeType.DRAG_END, event)
     this.thumb.setCoords(finger)
 
     this.touchId = null
@@ -267,7 +273,7 @@ export class ThumbDOM {
       return
     }
 
-    this.setPayload('drag-start', event)
+    this.setPayload(DOMCoordsChangeType.DRAG_START, event)
     this.thumb.setCoords(finger)
 
     const doc = ownerDocument(this.thumbElement)

@@ -1,5 +1,5 @@
 import { createApp, defineComponent, ref } from 'vue'
-import { Coords, Thumb, DraggingCallback, PartialCoords, offset as offsetMiddleware } from '../src'
+import { Coords, Thumb, DraggingCallback, PartialCoords, offsetDOM } from '../src'
 import { ThumbContext } from '../src/ThumbContext'
 
 const Round = defineComponent({
@@ -30,18 +30,9 @@ const App = defineComponent({
 
   setup() {
     const coords = ref<Coords>()
-    const offset = ref<PartialCoords>()
     const type = ref('props')
 
-    const middleware = offsetMiddleware(() => offset.value)
-
-    const handleDragStart: DraggingCallback = (coords, element) => {
-      const { top, left } = element.getBoundingClientRect()
-      offset.value = {
-        x: coords.x - left,
-        y: coords.y - top
-      }
-    }
+    const middleware = offsetDOM()
 
     return () => {
       return (
@@ -76,7 +67,6 @@ const App = defineComponent({
               x: 200
             }}
             middleware={middleware}
-            onDragStart={handleDragStart}
             onChange={(newCoords) => (coords.value = newCoords)}
           >
             {{
